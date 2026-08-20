@@ -50,6 +50,30 @@ const defaultItems: GridItem[] = [
         image: { src: "/images/coding.jpg" },
         alt: "Coding",
     },
+    {
+        image: { src: "/images/basketball.jpg" },
+        alt: "Basketball",
+    },
+    {
+        image: { src: "/images/boxing.jpg" },
+        alt: "Boxing",
+    },
+    {
+        image: { src: "/images/cooking.jpg" },
+        alt: "Cooking",
+    },
+    {
+        image: { src: "/images/jee.jpg" },
+        alt: "JEE",
+    },
+    {
+        image: { src: "/images/painting.jpg" },
+        alt: "Painting",
+    },
+    {
+        image: { src: "/images/swimming.jpg" },
+        alt: "Swimming",
+    },
 ]
 
 // Distinct visible color per tile (golden-angle hue rotation) so the grid is
