@@ -128,35 +128,126 @@ function mulberry32(seed: number) {
     }
 }
 
-// Fill a target length by repeating items, shuffled so neighbours don't
-// duplicate the same source item where possible.
-function fillAndShuffle<T>(items: T[], target: number, seed: number): T[] {
-    if (items.length === 0) return []
+// Spatially disperses items across a 2D grid such that identical/repeating items
+// are maximally separated in 2D Euclidean distance (no repeating images adjacent
+// horizontally, vertically, or diagonally, and separated as far as possible).
+function distribute2DGrid<T>(items: T[], cols: number, rows: number, seed: number): T[] {
+    const K = items.length
+    const N = cols * rows
+    if (K === 0 || N === 0) return []
+    if (K === 1) return new Array(N).fill(items[0])
     const rand = mulberry32(seed)
-    const out: T[] = []
-    // Build a pool: one shuffled copy of items, refilled when exhausted.
-    const refill = () => {
-        const pool = items.slice()
-        for (let i = pool.length - 1; i > 0; i--) {
-            const j = Math.floor(rand() * (i + 1))
-            ;[pool[i], pool[j]] = [pool[j], pool[i]]
-        }
-        return pool
+
+    // Build balanced item counts across the grid
+    const counts = new Array(K).fill(Math.floor(N / K))
+    const remainder = N % K
+    const perm = Array.from({ length: K }, (_, i) => i)
+    for (let i = K - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1))
+        ;[perm[i], perm[j]] = [perm[j], perm[i]]
     }
-    let pool = refill()
-    while (out.length < target) {
-        if (pool.length === 0) pool = refill()
-        const next = pool.pop()!
-        // Try to avoid placing the same item immediately after itself.
-        if (out.length > 0 && next === out[out.length - 1] && pool.length > 0) {
-            const swap = pool.pop()!
-            out.push(swap)
-            pool.push(next)
+    for (let i = 0; i < remainder; i++) counts[perm[i]]++
+
+    const grid = new Array(N).fill(-1)
+    const itemPos: number[][] = Array.from({ length: K }, () => [])
+
+    const distSq = (idx1: number, idx2: number) => {
+        const r1 = Math.floor(idx1 / cols)
+        const c1 = idx1 % cols
+        const r2 = Math.floor(idx2 / cols)
+        const c2 = idx2 % cols
+        const dr = r1 - r2
+        const dc = c1 - c2
+        return dr * dr + dc * dc
+    }
+
+    // Step 1: Greedy electrostatic potential placement
+    for (let cell = 0; cell < N; cell++) {
+        let bestScore = -Infinity
+        let bestCandidates: number[] = []
+
+        for (let item = 0; item < K; item++) {
+            if (counts[item] <= 0) continue
+            const positions = itemPos[item]
+            if (positions.length === 0) {
+                bestCandidates = [item]
+                bestScore = Infinity
+                break
+            }
+            let minDistSq = Infinity
+            for (let i = 0; i < positions.length; i++) {
+                const d2 = distSq(cell, positions[i])
+                if (d2 < minDistSq) minDistSq = d2
+            }
+            if (minDistSq > bestScore) {
+                bestScore = minDistSq
+                bestCandidates = [item]
+            } else if (minDistSq === bestScore) {
+                bestCandidates.push(item)
+            }
+        }
+
+        const chosenItem =
+            bestCandidates[Math.floor(rand() * bestCandidates.length)]
+        grid[cell] = chosenItem
+        counts[chosenItem]--
+        itemPos[chosenItem].push(cell)
+    }
+
+    // Step 2: Steep repulsion energy penalty to eliminate close identical pairs
+    const pairEnergy = (d2: number) => {
+        if (d2 <= 1) return 1000000 // immediate orthogonal neighbor (dist 1)
+        if (d2 <= 2) return 500000 // immediate diagonal neighbor (dist ~1.414)
+        if (d2 <= 4) return 100000 // 2 steps away (dist 2)
+        if (d2 <= 5) return 50000 // knight move (dist ~2.236)
+        if (d2 <= 8) return 20000 // dist ~2.828
+        if (d2 <= 9) return 10000 // dist 3
+        if (d2 <= 13) return 3000 // dist ~3.6
+        if (d2 <= 16) return 1000 // dist 4
+        return 100 / d2
+    }
+
+    const cellEnergy = (cell: number, item: number) => {
+        let energy = 0
+        const positions = itemPos[item]
+        for (let i = 0; i < positions.length; i++) {
+            const p = positions[i]
+            if (p === cell) continue
+            energy += pairEnergy(distSq(cell, p))
+        }
+        return energy
+    }
+
+    // Step 3: Local swap optimization to maximize distances
+    const iterations = Math.min(10000, N * 50)
+    for (let it = 0; it < iterations; it++) {
+        const c1 = Math.floor(rand() * N)
+        const c2 = Math.floor(rand() * N)
+        if (c1 === c2) continue
+        const item1 = grid[c1]
+        const item2 = grid[c2]
+        if (item1 === item2) continue
+
+        const currentE = cellEnergy(c1, item1) + cellEnergy(c2, item2)
+
+        const idx1InArr = itemPos[item1].indexOf(c1)
+        const idx2InArr = itemPos[item2].indexOf(c2)
+        itemPos[item1][idx1InArr] = c2
+        itemPos[item2][idx2InArr] = c1
+
+        const newE = cellEnergy(c1, item2) + cellEnergy(c2, item1)
+
+        if (newE <= currentE) {
+            grid[c1] = item2
+            grid[c2] = item1
         } else {
-            out.push(next)
+            // Revert
+            itemPos[item1][idx1InArr] = c1
+            itemPos[item2][idx2InArr] = c2
         }
     }
-    return out
+
+    return grid.map((idx) => items[idx])
 }
 
 /**
@@ -210,10 +301,9 @@ export default function DraggableGrid(props: DraggableGridProps) {
     // Square grid: rows === columns. Fill all cells by repeating items in a
     // shuffled order, so a small source list still produces a full grid.
     const rows = safeColumns
-    const totalCells = safeColumns * rows
     const displayItems = useMemo(
-        () => fillAndShuffle(safeItems, totalCells, 0xc0ffee),
-        [safeItems, totalCells]
+        () => distribute2DGrid(safeItems, safeColumns, rows, 0xc0ffee),
+        [safeItems, safeColumns, rows]
     )
 
     const gridW = safeColumns * safeImageWidth + (safeColumns - 1) * safeGap
