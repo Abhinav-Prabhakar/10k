@@ -108,13 +108,6 @@ const defaultItems: GridItem[] = [
     },
 ]
 
-// Distinct visible color per tile (golden-angle hue rotation) so the grid is
-// always visible even when images don't load.
-function getItemColor(index: number) {
-    const hue = (index * 137.508) % 360
-    return `hsl(${hue}, 55%, 55%)`
-}
-
 // Deterministic PRNG (mulberry32) so the shuffle is stable across renders
 // once seeded — no flicker on every re-render.
 function mulberry32(seed: number) {
@@ -266,13 +259,25 @@ export default function DraggableGrid(props: DraggableGridProps) {
         rounded,
         gap,
         enableWheel,
+        placeholderColor,
         onItemClick,
         style,
     } = props
 
+    const safeColumns = Math.max(1, Math.min(20, Math.floor(columns || 5)))
+    // Image dimensions match CurveGallery (px, clamped 20–4000).
+    const safeImageWidth = Math.max(20, Math.min(4000, imageWidth ?? 150))
+    const safeImageHeight = Math.max(20, Math.min(4000, imageHeight ?? 210))
+    // Gap matches CurveGallery: control is 0–100, ×4 → px. Same value spaces
+    // tiles from each other AND the grid edge from the boundary (padding).
+    const safeGap = Math.max(0, Math.min(100, gap ?? 4)) * 4
+    // Rounded matches CurveGallery: 0 = square … 20 = circle (on short side).
+    const r = Math.max(0, Math.min(20, rounded ?? 3))
+    const radius = (r / 20) * (Math.min(safeImageWidth, safeImageHeight) / 2)
+
     const containerRef = useRef<HTMLDivElement>(null)
-    const x = useMotionValue(0)
-    const y = useMotionValue(0)
+    const x = useMotionValue(safeGap)
+    const y = useMotionValue(safeGap)
 
     const [containerSize, setContainerSize] = useState({ w: 800, h: 600 })
     const [isDragging, setIsDragging] = useState(false)
@@ -287,16 +292,6 @@ export default function DraggableGrid(props: DraggableGridProps) {
 
     const safeItems =
         Array.isArray(items) && items.length > 0 ? items : defaultItems
-    const safeColumns = Math.max(1, Math.min(20, Math.floor(columns || 5)))
-    // Image dimensions match CurveGallery (px, clamped 20–4000).
-    const safeImageWidth = Math.max(20, Math.min(4000, imageWidth ?? 150))
-    const safeImageHeight = Math.max(20, Math.min(4000, imageHeight ?? 210))
-    // Gap matches CurveGallery: control is 0–100, ×4 → px. Same value spaces
-    // tiles from each other AND the grid edge from the boundary (padding).
-    const safeGap = Math.max(0, Math.min(100, gap ?? 4)) * 4
-    // Rounded matches CurveGallery: 0 = square … 20 = circle (on short side).
-    const r = Math.max(0, Math.min(20, rounded ?? 3))
-    const radius = (r / 20) * (Math.min(safeImageWidth, safeImageHeight) / 2)
 
     // Square grid: rows === columns. Fill all cells by repeating items in a
     // shuffled order, so a small source list still produces a full grid.
@@ -475,29 +470,16 @@ export default function DraggableGrid(props: DraggableGridProps) {
                                 height: safeImageHeight,
                                 overflow: "hidden",
                                 borderRadius: radius,
-                                backgroundColor: getItemColor(index),
+                                backgroundColor: placeholderColor || "#1a1a1f",
                                 color: "rgba(255,255,255,0.85)",
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
                                 fontFamily:
                                     "Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
-                                fontSize: Math.max(
-                                    14,
-                                    Math.round(
-                                        Math.min(
-                                            safeImageWidth,
-                                            safeImageHeight
-                                        ) * 0.16
-                                    )
-                                ),
-                                fontWeight: 600,
                                 cursor: isDragging ? "grabbing" : "pointer",
                             }}
                         >
-                            <span style={{ position: "relative", zIndex: 0 }}>
-                                {index + 1}
-                            </span>
                             {src && !failed ? (
                                 <Image
                                     src={src}
@@ -505,6 +487,8 @@ export default function DraggableGrid(props: DraggableGridProps) {
                                     draggable={false}
                                     onError={() => handleImageError(index)}
                                     fill
+                                    priority={index < 25}
+                                    loading={index < 25 ? "eager" : "lazy"}
                                     sizes={`${safeImageWidth}px`}
                                     style={{
                                         objectFit: "cover",
