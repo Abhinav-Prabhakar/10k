@@ -102,6 +102,10 @@ const defaultItems: GridItem[] = [
         image: { src: "/images/martial-arts.png" },
         alt: "Martial Arts",
     },
+    {
+        image: { src: "/images/running.jpg" },
+        alt: "Running",
+    },
 ]
 
 // Distinct visible color per tile (golden-angle hue rotation) so the grid is
