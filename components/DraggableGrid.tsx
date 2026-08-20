@@ -3,6 +3,7 @@
 
 "use client"
 
+import Image from "next/image"
 import { motion, useMotionValue, animate } from "framer-motion"
 import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 
@@ -118,7 +119,6 @@ export default function DraggableGrid(props: DraggableGridProps) {
         rounded,
         gap,
         enableWheel,
-        placeholderColor,
         onItemClick,
         style,
     } = props
@@ -136,8 +136,7 @@ export default function DraggableGrid(props: DraggableGridProps) {
     )
     const wheelAnimX = useRef<ReturnType<typeof animate> | null>(null)
     const wheelAnimY = useRef<ReturnType<typeof animate> | null>(null)
-    const failedImages = useRef<Set<number>>(new Set())
-    const [, forceRender] = useState(0)
+    const [failedImages, setFailedImages] = useState<Set<number>>(new Set())
 
     const safeItems =
         Array.isArray(items) && items.length > 0 ? items : defaultItems
@@ -267,8 +266,12 @@ export default function DraggableGrid(props: DraggableGridProps) {
     )
 
     const handleImageError = useCallback((index: number) => {
-        failedImages.current.add(index)
-        forceRender((n) => n + 1)
+        setFailedImages((prev) => {
+            if (prev.has(index)) return prev
+            const next = new Set(prev)
+            next.add(index)
+            return next
+        })
     }, [])
 
     const wrapperStyle: React.CSSProperties = {
@@ -314,7 +317,7 @@ export default function DraggableGrid(props: DraggableGridProps) {
                 {displayItems.map((item, index) => {
                     const src = item?.image?.src
                     const alt = item?.alt ?? item?.image?.alt ?? ""
-                    const failed = failedImages.current.has(index)
+                    const failed = failedImages.has(index)
                     return (
                         <div
                             key={index}
@@ -350,20 +353,17 @@ export default function DraggableGrid(props: DraggableGridProps) {
                                 {index + 1}
                             </span>
                             {src && !failed ? (
-                                <img
+                                <Image
                                     src={src}
                                     alt={alt}
                                     draggable={false}
                                     onError={() => handleImageError(index)}
+                                    fill
+                                    sizes={`${safeImageWidth}px`}
                                     style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        width: "100%",
-                                        height: "100%",
                                         objectFit: "cover",
                                         pointerEvents: "none",
                                         userSelect: "none",
-                                        display: "block",
                                         zIndex: 1,
                                     }}
                                 />
