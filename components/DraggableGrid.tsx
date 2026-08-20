@@ -6,15 +6,12 @@
 import { motion, useMotionValue, animate } from "framer-motion"
 import { useEffect, useMemo, useRef, useState, useCallback } from "react"
 
-export type GridItem = {
+type GridItem = {
     image?: { src?: string; srcSet?: string; alt?: string }
     alt?: string
-    title?: string
-    category?: string
-    milestonePreview?: string
 }
 
-export interface DraggableGridProps {
+interface DraggableGridProps {
     items?: GridItem[]
     columns?: number
     imageWidth?: number
@@ -30,147 +27,51 @@ export interface DraggableGridProps {
 const defaultItems: GridItem[] = [
     {
         image: {
-            src: "https://images.unsplash.com/photo-1520523839898-50712140b43a?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/612d1402-0ad9-4135-3bbc-a30a6a252b00/w=800",
         },
-        alt: "Grand Piano",
-        title: "Classical Piano",
-        category: "Music & Repertoire",
-        milestonePreview: "Play Chopin Ballade No. 1 from memory",
+        alt: "",
     },
     {
         image: {
-            src: "https://images.unsplash.com/photo-1529699211952-734e80c4d42b?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/6d2ad64a-102d-4eab-0efe-31479e34b500/w=800",
         },
-        alt: "Chess Grandmaster",
-        title: "Chess",
-        category: "Strategy & Calculation",
-        milestonePreview: "FIDE 2200 Candidate Master evaluation",
+        alt: "",
     },
     {
         image: {
-            src: "https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/be854dd1-37aa-4fc7-f569-fdb948109300/w=800",
         },
-        alt: "Fine Art Oil Painting",
-        title: "Oil Painting",
-        category: "Visual Arts",
-        milestonePreview: "Chiaroscuro portrait from life in single sitting",
+        alt: "",
     },
     {
         image: {
-            src: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/51984031-9176-484b-f5e0-4af9a8e9ed00/w=800",
         },
-        alt: "Software Architecture & Code",
-        title: "Systems Architecture",
-        category: "Computing & Logic",
-        milestonePreview: "Design high-throughput distributed consensus engine",
+        alt: "",
     },
     {
         image: {
-            src: "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/34ce1842-4b7a-4d52-0302-38582c341700/w=800",
         },
-        alt: "Classical Guitar",
-        title: "Classical Guitar",
-        category: "Music & Strings",
-        milestonePreview: "Flawless tremolo on Recuerdos de la Alhambra",
+        alt: "",
     },
     {
         image: {
-            src: "https://images.unsplash.com/photo-1502680390469-be75c86b636f?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/88369c6d-00cc-4ac9-74ca-0f0965e06300/w=800",
         },
-        alt: "Big Wave Surfing",
-        title: "Big Wave Surfing",
-        category: "Physical Mastery",
-        milestonePreview: "Effortless barrel riding on double-overhead reef breaks",
+        alt: "",
     },
     {
         image: {
-            src: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/aeaa0756-9647-4f6c-d900-204bd25e4a00/w=800",
         },
-        alt: "Japanese Calligraphy Shodo",
-        title: "Japanese & Kanji",
-        category: "Language & Linguistics",
-        milestonePreview: "Full JLPT N1 fluency & 2,136 Jouyou Kanji reading",
+        alt: "",
     },
     {
         image: {
-            src: "https://images.unsplash.com/photo-1516962215378-7fa2e137ae93?auto=format&fit=crop&w=800&q=80",
+            src: "https://imagedelivery.net/IEUjvl3YUlxY-MrTpOAWDQ/316d1761-fd79-4ca9-b8d4-f2bb20521a00/w=800",
         },
-        alt: "Film Photography",
-        title: "Film Photography",
-        category: "Visual Storytelling",
-        milestonePreview: "Zone System darkroom silver gelatin mastery",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "3D Procedural Sculpting",
-        title: "3D Sculpting",
-        category: "Digital Arts",
-        milestonePreview: "Anatomically flawless organic character modelling",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "Pure Mathematics",
-        title: "Pure Mathematics",
-        category: "Theory & Proof",
-        milestonePreview: "Deep intuition in differential geometry and topology",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "Creative Writing",
-        title: "Creative Writing",
-        category: "Literature",
-        milestonePreview: "Publish a compelling 90,000-word historical fiction novel",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "Woodworking Joinery",
-        title: "Fine Woodworking",
-        category: "Craftsmanship",
-        milestonePreview: "Hand-cut Japanese sashimono joinery with zero fasteners",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "Violin Repertoire",
-        title: "Violin",
-        category: "Music & Performance",
-        milestonePreview: "Master Bach Partita No. 2 Chaconne with rich tone",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "Gymnastics & Calisthenics",
-        title: "Calisthenics",
-        category: "Body Mastery",
-        milestonePreview: "Strict one-arm handstand & full maltese on still rings",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "Culinary Arts & Gastronomy",
-        title: "Culinary Arts",
-        category: "Craft & Flavor",
-        milestonePreview: "French mother sauce perfection and spontaneous tasting menus",
-    },
-    {
-        image: {
-            src: "https://images.unsplash.com/photo-1533577116850-9cc66cad8a9b?auto=format&fit=crop&w=800&q=80",
-        },
-        alt: "Bonsai Tree Cultivation",
-        title: "Bonsai Cultivation",
-        category: "Botanical Arts",
-        milestonePreview: "Decade-long structural wiring & deadwood jin carving",
+        alt: "",
     },
 ]
 
@@ -178,7 +79,7 @@ const defaultItems: GridItem[] = [
 // always visible even when images don't load.
 function getItemColor(index: number) {
     const hue = (index * 137.508) % 360
-    return `hsl(${hue}, 35%, 20%)`
+    return `hsl(${hue}, 55%, 55%)`
 }
 
 // Deterministic PRNG (mulberry32) so the shuffle is stable across renders
@@ -225,17 +126,6 @@ function fillAndShuffle<T>(items: T[], target: number, seed: number): T[] {
     return out
 }
 
-const COMPONENT_DEFAULTS = {
-    items: defaultItems,
-    columns: 12,
-    imageWidth: 240,
-    imageHeight: 300,
-    rounded: 5,
-    gap: 4,
-    enableWheel: true,
-    placeholderColor: "#121217",
-}
-
 /**
  * @framerSupportedLayoutWidth any
  * @framerSupportedLayoutHeight any
@@ -252,6 +142,7 @@ export default function DraggableGrid(props: DraggableGridProps) {
         rounded,
         gap,
         enableWheel,
+        placeholderColor,
         onItemClick,
         style,
     } = props
@@ -274,15 +165,15 @@ export default function DraggableGrid(props: DraggableGridProps) {
 
     const safeItems =
         Array.isArray(items) && items.length > 0 ? items : defaultItems
-    const safeColumns = Math.max(1, Math.min(20, Math.floor(columns || 12)))
+    const safeColumns = Math.max(1, Math.min(20, Math.floor(columns || 5)))
     // Image dimensions match CurveGallery (px, clamped 20–4000).
-    const safeImageWidth = Math.max(20, Math.min(4000, imageWidth ?? 240))
-    const safeImageHeight = Math.max(20, Math.min(4000, imageHeight ?? 300))
+    const safeImageWidth = Math.max(20, Math.min(4000, imageWidth ?? 150))
+    const safeImageHeight = Math.max(20, Math.min(4000, imageHeight ?? 210))
     // Gap matches CurveGallery: control is 0–100, ×4 → px. Same value spaces
     // tiles from each other AND the grid edge from the boundary (padding).
     const safeGap = Math.max(0, Math.min(100, gap ?? 4)) * 4
     // Rounded matches CurveGallery: 0 = square … 20 = circle (on short side).
-    const r = Math.max(0, Math.min(20, rounded ?? 4))
+    const r = Math.max(0, Math.min(20, rounded ?? 3))
     const radius = (r / 20) * (Math.min(safeImageWidth, safeImageHeight) / 2)
 
     // Square grid: rows === columns. Fill all cells by repeating items in a
@@ -408,8 +299,8 @@ export default function DraggableGrid(props: DraggableGridProps) {
         position: "relative",
         width: "100%",
         height: "100%",
-        minWidth: "100%",
-        minHeight: "100%",
+        minWidth: 600,
+        minHeight: 600,
         margin: 0,
         boxSizing: "border-box",
         overflow: "hidden",
@@ -447,15 +338,12 @@ export default function DraggableGrid(props: DraggableGridProps) {
                 {displayItems.map((item, index) => {
                     const src = item?.image?.src
                     const alt = item?.alt ?? item?.image?.alt ?? ""
-                    const title = item?.title ?? `Skill #${index + 1}`
-                    const category = item?.category
                     const failed = failedImages.current.has(index)
                     return (
                         <div
                             key={index}
                             onPointerDown={handlePointerDown}
                             onPointerUp={(e) => handlePointerUp(e, item, index)}
-                            className="group relative transition-transform duration-200 hover:scale-[1.02] active:scale-[0.99]"
                             style={{
                                 position: "relative",
                                 width: safeImageWidth,
@@ -463,37 +351,28 @@ export default function DraggableGrid(props: DraggableGridProps) {
                                 overflow: "hidden",
                                 borderRadius: radius,
                                 backgroundColor: getItemColor(index),
-                                color: "rgba(255,255,255,0.92)",
+                                color: "rgba(255,255,255,0.85)",
                                 display: "flex",
-                                flexDirection: "column",
-                                justifyContent: "flex-end",
+                                alignItems: "center",
+                                justifyContent: "center",
                                 fontFamily:
                                     "Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
+                                fontSize: Math.max(
+                                    14,
+                                    Math.round(
+                                        Math.min(
+                                            safeImageWidth,
+                                            safeImageHeight
+                                        ) * 0.16
+                                    )
+                                ),
+                                fontWeight: 600,
                                 cursor: isDragging ? "grabbing" : "pointer",
-                                border: "1px solid rgba(255, 255, 255, 0.08)",
-                                boxShadow: "0 10px 30px -10px rgba(0,0,0,0.5)",
                             }}
                         >
-                            <span
-                                style={{
-                                    position: "absolute",
-                                    top: "14px",
-                                    left: "14px",
-                                    zIndex: 2,
-                                    fontSize: "11px",
-                                    fontWeight: 700,
-                                    letterSpacing: "0.08em",
-                                    textTransform: "uppercase",
-                                    backgroundColor: "rgba(0, 0, 0, 0.65)",
-                                    backdropFilter: "blur(8px)",
-                                    border: "1px solid rgba(255, 255, 255, 0.15)",
-                                    padding: "3px 8px",
-                                    borderRadius: "9999px",
-                                }}
-                            >
-                                {category || `10,000h`}
+                            <span style={{ position: "relative", zIndex: 0 }}>
+                                {index + 1}
                             </span>
-
                             {src && !failed ? (
                                 <img
                                     src={src}
@@ -513,63 +392,21 @@ export default function DraggableGrid(props: DraggableGridProps) {
                                     }}
                                 />
                             ) : null}
-
-                            {/* Dark Gradient Overlay */}
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    inset: 0,
-                                    background:
-                                        "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.92) 100%)",
-                                    zIndex: 2,
-                                    pointerEvents: "none",
-                                }}
-                            />
-
-                            {/* Card Content Footer */}
-                            <div
-                                style={{
-                                    position: "relative",
-                                    zIndex: 3,
-                                    padding: "16px",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: "4px",
-                                }}
-                            >
-                                <h3
-                                    style={{
-                                        fontSize: "18px",
-                                        fontWeight: 700,
-                                        letterSpacing: "-0.02em",
-                                        color: "#ffffff",
-                                        lineHeight: 1.2,
-                                        margin: 0,
-                                    }}
-                                >
-                                    {title}
-                                </h3>
-                                {item.milestonePreview ? (
-                                    <p
-                                        style={{
-                                            fontSize: "12px",
-                                            color: "rgba(255, 255, 255, 0.65)",
-                                            margin: 0,
-                                            lineHeight: 1.3,
-                                            overflow: "hidden",
-                                            display: "-webkit-box",
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: "vertical",
-                                        }}
-                                    >
-                                        {item.milestonePreview}
-                                    </p>
-                                ) : null}
-                            </div>
                         </div>
                     )
                 })}
             </motion.div>
         </div>
     )
+}
+
+const COMPONENT_DEFAULTS = {
+    items: defaultItems,
+    columns: 15,
+    imageWidth: 200,
+    imageHeight: 200,
+    rounded: 3,
+    gap: 5,
+    enableWheel: false,
+    placeholderColor: "#1a1a1f",
 }
