@@ -17,6 +17,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <meta name="mobile-web-app-capable" content="yes"/>
+<meta name="msapplication-TileColor" content="#0b0b0c"/>
+<meta name="msapplication-TileImage" content="icon-192.png"/>
+<meta name="msapplication-config" content="none"/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="10,000 Hours"/>
 <meta property="og:title" content="10,000 Hours — a tracker for deliberate practice"/>
@@ -3470,5 +3473,15 @@ render();
 </script>
 <script src="share-card.js"></script>
 <script src="theme.js"></script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+window.addEventListener('beforeinstallprompt', function(e){
+  e.preventDefault();
+});
+</script>
 </body>
 </html>
