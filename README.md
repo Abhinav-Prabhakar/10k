@@ -1,378 +1,175 @@
-# 10,000 Hours
+<div align="center">
 
-A tracker for people who intend to become *trained enthusiasts* — not dabblers, not professionals by
-accident, but people putting in the hours on purpose.
+<img src="favicon.svg" width="64" alt="10,000 Hours mark" />
 
-One skill, one page. A year of days laid out as a contribution graph. Three numbers that tell you
-where you are, when you'll arrive, and whether you're actually moving. Click a square, type the hours,
-close it. That's the whole loop.
+# Why I built 10,000 Hours
 
----
+_(and why the number is not the point)_
 
-## The premise
+</div>
 
-The 10,000-hour idea is often misread as a promise. It isn't. It's a unit of seriousness: a way to
-make the distance visible, and to keep it visible on the days when nothing feels like progress.
+I built this because I kept mistaking the feeling of starting for the work of continuing. The first week is loud: a new notebook, a new setup, a plan with too many columns. Then life returns, and the plan becomes a reminder of the person I was briefly sure I'd become.
 
-Most habit apps optimise for the streak. This one optimises for the **trajectory**. A streak can be
-kept alive with five minutes; a trajectory cannot. The graph is the memory, the three figures are the
-diagnosis, and the only input is the honest number of hours you actually worked.
+What survives is not motivation. It is the quiet decision to show up again — for twenty minutes, for one square, for a number small enough to be honest.
 
-The audience is specific: someone learning piano, drawing, programming, running, Japanese — a skill
-they chose, not one their job assigned. They don't need badges. They need a clean instrument and a
-reason to open it tomorrow.
+**10,000 Hours is not a productivity dashboard.** It is a small instrument for that decision. One skill, one page. A year of days you can actually see. Three numbers: how much you have done, when you reach the next milestone at your current pace, and whether that pace is moving.
 
----
+It does not sync. It does not send notifications. It does not turn your practice into a leaderboard. It just keeps the distance visible, so the days you show up have somewhere to go.
 
-## What it does
+Because when the initial excitement is gone, the only useful question is: _am I still moving?_
 
-### The graph
+10,000 Hours answers without applause: **yes. one more square.**
 
-A GitHub-style contribution graph, 53 weeks wide, one cell per day. Colour intensity is relative to
-*that skill's* daily target, so a cell at level 3 always means "on cadence", whatever the skill. Each
-skill has its own hue — violet for piano, azure for drawing, green for programming, amber for running,
-rose for Japanese — and the page takes on that hue in its data ink only.
+<br />
 
-The current week is partial because the future isn't rendered. Unlogged days sit at the palest grey,
-waiting. The graph is both a record and an invitation.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/app-dark.png" />
+  <img src="docs/app-light.png" alt="The 10,000 Hours console: a year of violet practice cells, cumulative hours, next-milestone ETA, pace, and gold milestone cards." />
+</picture>
 
-### The three figures
+<div align="center">
+<sub>The console. One skill, one year, three numbers.</sub>
+</div>
 
-| | Question | Visual |
-| --- | --- | --- |
-| **Cumulative** | How much have I actually done? | Hours, with a hairline bar toward the skill's horizon |
-| **ETA** | When do I reach the next milestone at this pace? | A month and year, with a dot on a 0–10 year ruler |
-| **Pace** | Am I moving fast enough? | h/day, with a 14-day sparkline and target line |
+<br />
 
-Each is one value, one visual, and a hint that appears only when you hover. No dashboard, no chart
-junk, no percentage shouting for attention.
-
-Pace is the mean over the **last 28 calendar days, including zero days**. That is deliberate. It
-prevents one heroic weekend from producing a flattering completion date. The ETA is allowed to be
-disappointing; that's what makes it useful.
-
-### Logging
-
-Click any cell. A small popover opens above it with the date, a large borderless input, and three
-quick-adds (`+½`, `+1`, `+2`). Type, press `Enter`, and the square pulses, the bar grows, the numbers
-count up from their previous values. `Esc` or a click outside cancels. `clear` deletes the day.
-
-The graph is the date picker. There is no separate "add session" form, no notes field, no duration
-wheels. One gesture from thought to recorded hour.
-
-### Retargeting
-
-The target in the subline — `3 h/day` — is editable. Tap it and a small slider opens under the text:
-drag for coarse movement, use `−`/`+` for quarter-hour precision, then `save`. The graph repaints
-live as the target moves, so you can see what "on cadence" will mean before you commit it. `Esc` or a
-click outside restores the old target.
-
-This is deliberately a different instrument from logging. A session is a number you type; a target
-is a scale you calibrate.
-
-### Timing a session
-
-Press and hold any day and a stopwatch starts for it. A quiet bar appears at the bottom of the
-console: the skill and date, the clock, the day's progress toward target, and two actions.
-`log` rounds the elapsed time to the nearest minute and adds it to that day; `discard` drops it. The
-clock keeps running when you release the press — stopping is always explicit.
-
-The bar exists only while a clock runs. One session runs at a time: holding another day logs the
-first and starts the second. Switching skills does not stop the clock, and the bar keeps the timed
-skill's hue until you end it. Keyboard users reach the same session through `timer` in the logger.
-The whole gesture is specified in [`design.md` §18](./design.md#18-live-session--press-and-hold-to-time).
-
-### Setting hours with a swipe
-
-Press a day, keep the finger down, and drag: the square follows your hand and a small readout appears
-beside it with the date, the new total, the change, and a hairline ruler from 0 to 24 hours. Release
-to log it; `Esc` puts it back. Eleven pixels is a quarter hour at first, then the same travel buys
-more as the drag continues, so a day can go from empty to eight hours in one gesture. A still press is
-still the stopwatch, a flick still scrolls the page, and a sideways drag still moves the graph.
-Ending where you started writes nothing.
-
-The header hint reads `hold a day to time it · drag to set hours` and retires after the first session
-or the first swipe. The gesture is specified in
-[`design.md` §20](./design.md#20-swipe-to-log--press-a-day-drag-vertically).
-
-### Milestones
-
-Below the three figures, a row of cards marks fixed thresholds — `1`, `10`, `25`, `50`, `100`, `250`,
-`500`, `1,000`, `2,500`, `5,000`, `10,000` hours. A skill shows only the cards inside its own horizon:
-eleven for 10,000 hours, eight for a microskill. Each card stays grey until the skill's total crosses it,
-then is struck gold; the nearest unachieved card carries a thin progress hairline and opens centred when
-you land on the page. A crossing announces once and settles a single card, never a loop, and only the
-highest threshold of a many-threshold write speaks. The last card in the row is the summit and alone has
-a distinct double rim — `10,000` normally, `1,000` for a microskill. The row is the only place gold
-appears in the interface; it is not a badge wall — nothing is awarded for showing up, and every card
-marks hours the graph already counts. The material and the three states are specified in
-[`design.md` §21](./design.md#21-milestones--struck-gold).
-
-### Microskills
-
-Not every practice is aiming at ten thousand hours. Hold `⌘` (or `Ctrl`) and click the rail's add
-button — or press `⌘⇧N` / `Ctrl+Shift+N`, or run `New microskill…` from the palette — and the same
-create dialog opens with a shorter horizon: **1,000 hours** instead of 10,000. The title reads
-`New microskill`, a quiet ring and `1,000 h` sit opposite it, and the page that follows is the same
-instrument at a smaller scale.
-
-The horizon is data, not decoration. It changes `remaining`, the cumulative bar, the milestone count
-and summit card, the next-milestone ETA, and the completion copy; a microskill at 1,000 hours says
-`1,000 h reached`, never `10,000 h reached`. The rail and page header stay identical to every other
-skill; the shorter milestone row is the only visible difference. There is no second accent, no badge,
-and no special graph. The trigger, visual rules, and persistence
-contract are specified in [`design.md` §23](./design.md#23-microskills--a-shorter-horizon).
-
-### Sharing a card
-
-Hold the skill title for a moment — or focus it and press `Shift+Enter` — and the page composes a
-1080 × 1920 poster: the wordmark and date, the skill, cumulative hours with its distance bar, the
-year's graph, the next milestone's date, pace with a sparkline, and the gold thresholds. It downloads
-directly as `10k-piano-2026-10-22.png`. The card is drawn in Canvas from the same tokens, so a dark
-page yields a dark poster; a short click is still just a click, and the hint lives only on hover or
-focus.
-
-### Getting around
-
-The icon rail holds one page per skill. Arrow keys move between skills; the rail's active marker
-animates in, the canvas rises into place. On small screens the rail becomes a bottom bar.
-
-The rail ends with an add button. It opens a small dialog — a name, an icon (42 line glyphs, from
-piano and guitar to flask, scales, and binoculars), a hue, a daily target — and the new page arrives
-empty, because the graph is the invitation. The icon picks itself as you type: name the skill
-`guitar for beginners` and the guitar lights up behind a quiet `icon · guitar` line, with misspellings
-(`gutar`) and partials (`guit`) resolving sensibly. Pick a glyph by hand and it stays picked. `Enter`
-in the name field creates; `Esc` or a backdrop click cancels. Holding `⌘`/`Ctrl` while clicking the add
-button opens the same dialog on a 1,000-hour horizon (see [Microskills](#microskills)). New skills are
-not seeded with demo hours; the first square is yours to fill.
-
-Skills can be removed with the same restraint. Press and hold a rail icon — or right-click it, or focus
-it and press `Delete`/`Backspace` — and a short confirm names the skill and what will be lost:
-`42 sessions · 531 h will be removed.` Nothing is added to the rail at rest: no menu, no delete
-button, no control, no microskill mark. `Esc` or `cancel` leaves everything intact, and the last
-remaining skill cannot be deleted (`Keep at least one skill.`).
-
-### The gallery
-
-A button in the header — four small cells and the word `gallery`, beside the legend — opens the visual index:
-225 photographs you can drag, flick, and throw, laid out deterministically so the same hobbies always sit in the
-same places. It is the one image-led screen, so the photographs carry all the colour; the chrome stays a black
-field with hairline pills.
-
-A tile whose hobby exists as a skill is live: the photograph stays in colour, its name and an arrow appear on
-approach, and a click (or `Enter`/`Space`) opens that exact page — `index.html?skill=Piano`. A tile with no skill
-yet is a quiet preview: desaturated, dimmed, marked `soon`, and inert. Names live on hover and keyboard focus, not
-on the resting grid. Supported tiles lead to `Piano`, `Painting` → `Drawing`, `Coding` → `Programming`, and
-`Running`; the mapping is one documented table inside `gallery.html`, so adding a new image and skill is a one-line
-change. `Japanese` has no image yet and is therefore unsupported.
-
-The index reads saved skills from `tenk.v1` when they exist, defensively, and falls back to the five defaults; it
-never writes. A user-created skill named after a hobby (`Chess`) lights that tile automatically. The map is
-documented in [`design.md` §24](./design.md#24-gallery--the-visual-index).
-
-`drag to explore · click to open` appears once at the bottom and retires after the first gesture. A small `home`
-pill returns to the console. The console also accepts the reverse route: `index.html?skill=Running` selects
-`Running` on boot, case-insensitively, without scrolling or rewriting the URL.
-
-### Keyboard
-
-The console is fully drivable from the keyboard, and the palette is the front door. `⌘K` (or `Ctrl+K`)
-opens a command palette: type to fuzzy-find a skill or an action — `New skill…`, `New microskill…`,
-`Edit daily target…`, `Log today…`, start or stop the session, `Delete…`, `Keyboard shortcuts`,
-`Switch to…` — then arrow to it and press `Enter`. `?` opens the shortcut cheatsheet; `⌘⇧N`
-(or `Ctrl+Shift+N`) opens a new microskill, `⌘⇧L` (`Ctrl+Shift+L`) cycles the theme, `1`–`9` jump
-straight to a skill, `↑`/`↓` (or the rail's `←`/`→`) move between them, and `N`, `T`, `L`, `S`, `D`
-reach new-skill, retarget, log-today, the stopwatch, and delete. Single keys stay quiet while you are
-typing or while a surface is open, and `Esc` always closes the topmost one. The console claims only its
-own combinations; every other browser shortcut is left alone. (`⌘⇧N` is the one exception on macOS,
-where the browser also uses it for a new incognito window — the palette's `New microskill…` is the
-fallback if the browser wins.)
-
-### Theme
-
-The page opens in `auto`, following the system's light or dark preference. `⌘⇧L` / `Ctrl+Shift+L`, or
-the quiet glyph at the end of the header legend, cycles `auto → light → dark → auto`; the gallery has
-the same control at its bottom-right. The choice is remembered in `tenk.theme` and survives a reload.
-A theme change is a `480ms` circular reveal from the control, or a `380ms` colour crossfade where View
-Transitions are unavailable; both respect `prefers-reduced-motion`. Dark is the same instrument after
-dark — hairlines, no cards, one skill hue on data ink, gold only on the milestone row. The full token
-table lives in [`design.md` §25](./design.md#25-theming--auto-light-dark).
+[![Open the console](https://img.shields.io/badge/OPEN_THE_CONSOLE-101010?style=flat-square&labelColor=101010&color=101010)](https://abhinav-prabhakar.github.io/10k/)
+[![Hobby gallery](https://img.shields.io/badge/HOBBY_GALLERY-1f1f21?style=flat-square&labelColor=1f1f21&color=1f1f21)](https://abhinav-prabhakar.github.io/10k/gallery.html)
+[![Design system](https://img.shields.io/badge/DESIGN_SYSTEM-7c3aed?style=flat-square&labelColor=7c3aed&color=7c3aed)](design.md)
 
 ---
 
-## Philosophy
+## The instrument
 
-**Hours are the only currency.** No points, no levels, no badges. The milestone row is the single
-ornament, and it marks the same hours the graph already counts: a threshold crossed, never an award for
-showing up. The number is the reward, and it is allowed to be small.
+A GitHub-style contribution graph, 53 weeks wide, one cell per day. Colour intensity is relative to *that skill's* daily target, so a cell at level 3 always means “on cadence”, whatever the skill.
 
-**Projection beats motivation.** A completion date is a more honest coach than a streak counter. It
-tells you what your current behaviour actually amounts to.
+Click a day to log hours. Hold it to start a stopwatch. Drag vertically to set the whole day in one gesture. The graph is the date picker; there is no separate form.
 
-**Visual before verbal.** If a fact can be a bar, a dot, a sparkline, or a cell, it should not be a
-sentence. Labels exist to anchor visuals, not to explain the product.
+Below it, three numbers:
 
-**Calm by default, precise on approach.** Most of the evidence is one hover away. The resting page is
-quiet enough to leave open on a second monitor; the engaged page answers exactly what you asked.
+- **Cumulative** — hours done, with a hairline bar toward the horizon.
+- **ETA** — the month and year you reach the *next* milestone at your current pace.
+- **Pace** — h/day over the last 28 days, including zero days.
 
-**One accent per skill.** Colour is identity, not decoration. The interface itself is black, white,
-and hairline grey. Nothing is tinted for style.
+Pace includes the zeros on purpose. One heroic weekend should not be allowed to flatter the projection. The ETA is allowed to be disappointing; that is what makes it useful.
 
-**Nothing bounces.** Motion exists to report change — a logged cell, a number moving, a page arriving.
-One ease-out family, no springs, no confetti. Restraint is the aesthetic.
+The milestone row is the only ornament. Eleven thresholds, struck gold when crossed. Nothing is awarded for showing up. Every card marks hours the graph already counts.
 
-**Own the data.** Local-first by intent: the record of your practice should be a file you can read,
-not a metric inside someone else's product.
+---
+
+## The gallery
+
+A visual index for the hobbies that could become practices. Twenty photographs, one draggable field. The skills you already track keep their colour and open their page. Everything else waits in greyscale, marked `soon`.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/gallery-light.webp" alt="The hobby gallery in paper-light mode, with tracked photographs in colour and the rest greyscale." /></td>
+<td width="50%"><img src="docs/gallery-dark.webp" alt="The hobby gallery in near-black mode, photographs as the only colour." /></td>
+</tr>
+<tr>
+<td align="center"><sub>Light</sub></td>
+<td align="center"><sub>Dark</sub></td>
+</tr>
+</table>
+
+---
+
+## A card worth posting
+
+Hold the skill title — or focus it and press <kbd>⇧</kbd><kbd>↵</kbd> — and the page composes a **1080 × 1920** poster: the year's graph, cumulative hours, the next milestone, pace, and the gold thresholds. It downloads as a PNG.
+
+It reads the live theme, so a dark console produces a dark card. A still image, designed for a story — not a screenshot of the interface.
+
+<table>
+<tr>
+<td width="300" valign="top"><img src="docs/share-card.png" width="280" alt="A phone-sized share poster for Piano: 531 hours, a violet contribution graph, next milestone Jun 2027, pace 1.9 h/day, and seven gold milestone dots." /></td>
+<td valign="top">
+
+**Quiet on approach.** The hint only appears on hover or focus. A short click is still just a click.
+
+**Same colour system.** Ink and hairlines for every word; the skill hue only in data ink; gold only in the milestones.
+
+**Phone first.** Exactly 1080 × 1920. No browser chrome, no URL, no QR clutter.
+
+</td>
+</tr>
+</table>
+
+---
+
+## Microskills
+
+Not every practice is aiming at ten thousand hours. Hold <kbd>⌘</kbd> (macOS) or <kbd>Ctrl</kbd> (Windows/Linux) while clicking the rail's add button, and the same dialog opens with a **1,000-hour** goal.
+
+The page is the same instrument. The bar, ETA, completion copy, and milestone row all read the skill's own horizon. The row simply ends at `1,000`. No special badge, no second accent, no smaller version of the product.
+
+---
+
+## Yours, locally
+
+Your practice is a file you can read, not a metric inside someone else's product. Skills, logs, targets, the active skill, and each skill's horizon live in `localStorage` under `tenk.v1`. A corrupt payload is backed up and reseeded; storage failures never throw. The theme preference lives separately under `tenk.theme`.
+
+There is no account, no server, and no tracking. A running stopwatch is still written only when the session is logged or discarded.
+
+---
+
+## Run it
+
+```bash
+git clone https://github.com/Abhinav-Prabhakar/10k.git
+cd 10k
+open index.html
+```
+
+That is the whole setup. For the localStorage contract and the Node tests:
+
+```bash
+python3 -m http.server 8899
+node store.test.js
+```
+
+Open <http://localhost:8899>.
+
+**Live:** <https://abhinav-prabhakar.github.io/10k/> — GitHub Pages, `main`, root. No build step.
+
+<details>
+<summary><strong>Keyboard shortcuts</strong></summary>
+
+<br />
+
+| Keys | Action |
+|:--|:--|
+| <kbd>⌘</kbd><kbd>K</kbd> / <kbd>Ctrl</kbd><kbd>K</kbd> | Command palette |
+| <kbd>?</kbd> | Shortcut cheatsheet |
+| <kbd>↑</kbd> <kbd>↓</kbd> / <kbd>←</kbd> <kbd>→</kbd> | Previous / next skill |
+| <kbd>1</kbd>–<kbd>9</kbd> | Jump to skill |
+| <kbd>N</kbd> | New skill |
+| <kbd>⌘</kbd><kbd>⇧</kbd><kbd>N</kbd> / <kbd>Ctrl</kbd><kbd>⇧</kbd><kbd>N</kbd> | New microskill |
+| <kbd>T</kbd> | Edit the daily target |
+| <kbd>L</kbd> | Log today |
+| <kbd>S</kbd> | Start / stop today's session |
+| <kbd>D</kbd> | Delete this skill |
+| <kbd>⌘</kbd><kbd>⇧</kbd><kbd>L</kbd> / <kbd>Ctrl</kbd><kbd>⇧</kbd><kbd>L</kbd> | Cycle auto → light → dark |
+| <kbd>Esc</kbd> | Close the topmost surface |
+
+</details>
+
+<br />
+
+<p align="center">
+  <img src="docs/app-mobile.png" width="300" alt="The 10,000 Hours console on a phone in dark mode." />
+</p>
 
 ---
 
 ## Design
 
-The full specification — tokens, type scale, components, motion catalogue, data semantics, copy,
-accessibility floors, and rules for extending the system — lives in [`design.md`](./design.md).
+The full system lives in [`design.md`](design.md): tokens, type scale, motion, data semantics, accessibility floors, and the reasons behind each surface. White canvas, Inter at 100–300, hairlines instead of cards, one hue per skill, one easing curve. Dark mode is the same instrument after dark.
 
-The short version:
+Built with vanilla HTML, CSS, and JavaScript. No framework, no bundler, no tracking.
 
-- White canvas, Inter at weights 100–300, 14px body, `-0.01em` tracking.
-- Structural hairlines at `1px #f1f1f1`; no cards, shadows, gradients, or glass.
-- 12px contribution cells, 3px gaps, 2.5px radius, hover scale 1.4 with a thin black ring.
-- One skill hue per page, expressed only in data ink (cells, bars, ruler dot, sparkline).
-- Metric tiles separated by hairlines; a 1px black rule sweeps in on hover.
-- Detail revealed on hover, never required for comprehension.
-- Single easing curve: `cubic-bezier(.2,.8,.2,1)`.
-- Light, dark, and system-following themes from one token set; dark keeps every hairline and adds no cards.
+<div align="center">
 
----
+**Ten thousand hours is not a deadline. It's a direction.**
 
-## Status
-
-This repository currently holds a **design prototype**, not a finished app.
-
-- [`index.html`](./index.html) — self-contained HTML/CSS/JS prototype. No build step, no
-  dependencies beyond the Inter webfont. **Variant 1 — "Console"** is final and is the only UI in
-  the file: the rail, the 42-icon add-skill dialog, the graph, the three metrics, the milestone row,
-  the logger, the target slider, the press-and-hold stopwatch, the press-drag swipe that sets a day's
-  hours, gesture-only skill deletion, microskills, and the `⌘K` command palette with its shortcut
-  layer. Variants 2 and 3 have been removed. The header's `gallery` control opens the visual index;
-  `?skill=<name>` deep-links into a skill. The theme layer lives outside the page in
-  [`theme.css`](./theme.css) and [`theme.js`](./theme.js), loaded by both HTML files.
-- Data is **local-first**. On first run [`store.js`](./store.js) seeds the deterministic demo once and
-  writes it to `localStorage` under `tenk.v1`; from then on, skills, logs, targets, the active skill,
-  and each skill's horizon survive a reload. A corrupt payload is backed up under `tenk.v1.backup` and
-  the demo is reseeded rather than the page failing. The store never throws when storage is missing or
-  blocked (including some `file://` contexts). A running stopwatch still does not survive a reload —
-  it is written only when the session is logged or discarded. The theme preference is persisted
-  separately, in `tenk.theme`.
-- [`store.js`](./store.js) — the dependency-free persistence module (versioned envelope, validation,
-  migration, corrupt-payload fallback). [`store.test.js`](./store.test.js) exercises the contract in
-  Node. [`microskill.css`](./microskill.css) holds the microskill create-dialog mode.
-- [`gallery.html`](./gallery.html) — standalone draggable index of 225 hobby photographs. Four hobby
-  types map to existing skills and open their pages; the rest are grayscale previews marked `soon`.
-  Reads `tenk.v1` defensively when present. A `home` pill returns to the console.
-- [`design.md`](./design.md) — the canonical design system for everything built next. Its **§17
-  Archive** keeps the reusable components from the retired variants (ring, pill nav, centered cards,
-  sidebar list, mini bars, comparison rows) with full specifications; **§24** specifies the gallery.
-
-### Running it
-
-Open `index.html` in a browser. That's it.
-
-```
-open index.html
-```
-
-Persistence and theme both use `localStorage`. Some browsers restrict it on `file://` origins; if you
-want the full local-first behaviour (and the Node store tests), serve the directory:
-
-```
-python3 -m http.server 8899
-node store.test.js
-```
-
-The theme still works from `file://`, though a restricted origin makes the choice last only for the
-session.
-
-### Hosting
-
-The site is served by **GitHub Pages from the `main` branch, root folder**:
-
-**<https://abhinav-prabhakar.github.io/10k/>**
-
-There is no build step and nothing to compile: Pages serves `index.html`, `gallery.html`, `design.md`,
-`reference.html`, `images/`, `theme.css`, and `theme.js` as they are. The empty [`.nojekyll`](./.nojekyll)
-file keeps Pages from running the files through Jekyll, so the underscore-free paths and assets are
-served verbatim.
-
-Deployment is just a push to `main` — no project workflows, no Vercel or third-party deployment checks,
-and no environment secrets. GitHub Pages runs its own built-in build on `main`; it is not a pull-request
-gate and there is nothing to configure here. Vercel is retired for this project; there is no `vercel.json`,
-`CNAME`, or workflow file to maintain.
-The page is a static prototype, so there is no server, database, or API to configure.
-
-### Previewing a theme
-
-For screenshots and design review, `?theme=light`, `?theme=dark`, or `?theme=auto` overrides the saved
-preference for that load without persisting it. Any click on the theme control (or the shortcut) clears
-the override and stores a real preference.
-
----
-
-## Roadmap
-
-Near term, in order:
-
-1. **Console polish.** Tighten hover and keyboard states, verify the graph at every breakpoint, and
-   finish the reduced-motion pass.
-2. **Persistence.** Local storage ships in [`store.js`](./store.js) — versioned payload, migration,
-   corrupt-payload fallback. Still to come: persisting an in-flight session as
-   `{skill, day, startedAt}` so a refresh can resume the clock against the same day. No account
-   required.
-3. **Real logging.** Accessible dialog semantics, cell hit areas on touch, a visible focus state in
-   the input, and a polite live-region announcement on commit.
-4. **Skill management.** Creation ships as the rail's add dialog (name, icon, hue, target), the
-   subline target is editable, and deletion ships as a gesture-only confirm on the rail with a
-   last-skill guard. Still to come: rename, reorder, archive — using the modal and form patterns
-   already specified in `design.md`.
-5. **Overview.** A single page that lists every skill as a hairline row with its own mini ramp and
-   the same three figures — built from the archived Ledger row in `design.md` §17.3.
-6. **Import / export.** CSV and JSON, so a decade of hours is never trapped.
-
-Deliberately not planned: social feeds, leaderboards, notifications, streaks as a primary metric,
-gamified badges, AI coaching. The product's value is its quietness.
-
----
-
-## Project structure
-
-```
-.
-├── index.html      # self-contained Console prototype (Variant 1 only)
-├── share-card.css  # hold-to-share title affordance (design.md §22)
-├── share-card.js   # 1080 × 1920 poster composer and download (§22)
-├── store.js        # local-first persistence: tenk.v1, validation, migration, fallback (§23)
-├── store.test.js   # Node tests for the persistence contract
-├── microskill.css  # microskill create-dialog mode
-├── gallery.html    # draggable 225-photo hobby index; supported tiles deep-link into the console (§24)
-├── theme.css       # theme tokens, dark overrides, control, transition, gallery paper mode (§25)
-├── theme.js        # theme engine: auto/light/dark, shortcut, circular reveal (§25)
-├── images/         # 20 hobby images used by gallery.html
-├── .nojekyll       # serve the site verbatim on GitHub Pages
-├── design.md       # design system: tokens, motion, semantics, §17 archive, §18 live session, §20 swipe, §21 milestones, §22 share card, §23 microskills, §24 gallery, §25 theming
-├── reference.html
-└── README.md       # this file
-```
-
----
-
-## Principles for contributors
-
-- Read `design.md` before adding a surface. If a new element isn't covered, extend the system
-  deliberately and document it there.
-- Prefer removing an element to styling it.
-- Never introduce a second accent, a second icon family, or a second easing curve.
-- Keep derived numbers in one place. The graph, the tiles, and any future overview must agree.
-- If a change makes the page louder without making it clearer, it's the wrong change.
-
----
-
-*Ten thousand hours is not a deadline. It's a direction.*
+</div>

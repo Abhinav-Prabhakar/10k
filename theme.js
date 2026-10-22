@@ -84,6 +84,8 @@
     root.dataset.theme = current;
     root.dataset.themePref = p;
     try { root.style.colorScheme = current; } catch (err) { /* older engines */ }
+    var meta = document.getElementById("themeColor");
+    if (meta) meta.setAttribute("content", current === "dark" ? "#0b0b0c" : "#ffffff");
     syncControls();
   }
 
