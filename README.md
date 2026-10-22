@@ -40,7 +40,7 @@ waiting. The graph is both a record and an invitation.
 
 | | Question | Visual |
 | --- | --- | --- |
-| **Cumulative** | How much have I actually done? | Hours, with a hairline bar toward 10,000 |
+| **Cumulative** | How much have I actually done? | Hours, with a hairline bar toward the skill's horizon |
 | **ETA** | When do I reach the next milestone at this pace? | A month and year, with a dot on a 0–10 year ruler |
 | **Pace** | Am I moving fast enough? | h/day, with a 14-day sparkline and target line |
 
@@ -97,14 +97,31 @@ or the first swipe. The gesture is specified in
 
 ### Milestones
 
-Below the three figures, a row of eleven cards marks fixed thresholds — `1`, `10`, `25`, `50`, `100`,
-`250`, `500`, `1,000`, `2,500`, `5,000`, `10,000` hours. Each stays grey until the skill's total crosses
-it, then is struck gold; the nearest unachieved card carries a thin progress hairline and opens centred
-when you land on the page. A crossing announces once and settles a single card, never a loop, and only
-the highest threshold of a many-threshold write speaks. The `10,000` card alone has a distinct double
-rim. The row is the only place gold appears in the interface; it is not a badge wall — nothing is
-awarded for showing up, and every card marks hours the graph already counts. The material and the three
-states are specified in [`design.md` §21](./design.md#21-milestones--struck-gold).
+Below the three figures, a row of cards marks fixed thresholds — `1`, `10`, `25`, `50`, `100`, `250`,
+`500`, `1,000`, `2,500`, `5,000`, `10,000` hours. A skill shows only the cards inside its own horizon:
+eleven for 10,000 hours, eight for a microskill. Each card stays grey until the skill's total crosses it,
+then is struck gold; the nearest unachieved card carries a thin progress hairline and opens centred when
+you land on the page. A crossing announces once and settles a single card, never a loop, and only the
+highest threshold of a many-threshold write speaks. The last card in the row is the summit and alone has
+a distinct double rim — `10,000` normally, `1,000` for a microskill. The row is the only place gold
+appears in the interface; it is not a badge wall — nothing is awarded for showing up, and every card
+marks hours the graph already counts. The material and the three states are specified in
+[`design.md` §21](./design.md#21-milestones--struck-gold).
+
+### Microskills
+
+Not every practice is aiming at ten thousand hours. Hold `⌘` (or `Ctrl`) and click the rail's add
+button — or press `⌘⇧N` / `Ctrl+Shift+N`, or run `New microskill…` from the palette — and the same
+create dialog opens with a shorter horizon: **1,000 hours** instead of 10,000. The title reads
+`New microskill`, a quiet ring and `1,000 h` sit opposite it, and the page that follows is the same
+instrument at a smaller scale.
+
+The horizon is data, not decoration. It changes `remaining`, the cumulative bar, the milestone count
+and summit card, the next-milestone ETA, and the completion copy; a microskill at 1,000 hours says
+`1,000 h reached`, never `10,000 h reached`. In the rail the skill's own hue gets one small dot, and a
+hover or focus tooltip names it (`microskill · 1,000 h`); the page subline carries the same mark. There
+is no second accent, no badge, and no special graph. The trigger, visual rules, and persistence
+contract are specified in [`design.md` §23](./design.md#23-microskills--a-shorter-horizon).
 
 ### Getting around
 
@@ -116,24 +133,29 @@ piano and guitar to flask, scales, and binoculars), a hue, a daily target — an
 empty, because the graph is the invitation. The icon picks itself as you type: name the skill
 `guitar for beginners` and the guitar lights up behind a quiet `icon · guitar` line, with misspellings
 (`gutar`) and partials (`guit`) resolving sensibly. Pick a glyph by hand and it stays picked. `Enter`
-in the name field creates; `Esc` or a backdrop click cancels. New skills are not seeded with demo
-hours; the first square is yours to fill.
+in the name field creates; `Esc` or a backdrop click cancels. Holding `⌘`/`Ctrl` while clicking the add
+button opens the same dialog on a 1,000-hour horizon (see [Microskills](#microskills)). New skills are
+not seeded with demo hours; the first square is yours to fill.
 
 Skills can be removed with the same restraint. Press and hold a rail icon — or right-click it, or focus
 it and press `Delete`/`Backspace` — and a short confirm names the skill and what will be lost:
-`42 sessions · 531 h will be removed.` Nothing is added to the rail at rest: no menu, no dot, no
-delete button. `Esc` or `cancel` leaves everything intact, and the last remaining skill cannot be
+`42 sessions · 531 h will be removed.` Nothing is added to the rail at rest: no menu, no delete
+button, no control. (A microskill's 3px hue dot is the one resting mark, and it reports a horizon, not
+an action — §23.3.) `Esc` or `cancel` leaves everything intact, and the last remaining skill cannot be
 deleted (`Keep at least one skill.`).
 
 ### Keyboard
 
 The console is fully drivable from the keyboard, and the palette is the front door. `⌘K` (or `Ctrl+K`)
-opens a command palette: type to fuzzy-find a skill or an action — `New skill…`, `Edit daily target…`,
-`Log today…`, start or stop the session, `Delete…`, `Keyboard shortcuts`, `Switch to…` — then arrow to
-it and press `Enter`. `?` opens the shortcut cheatsheet; `1`–`9` jump straight to a skill, `↑`/`↓`
-(or the rail's `←`/`→`) move between them, and `N`, `T`, `L`, `S`, `D` reach new-skill, retarget,
-log-today, the stopwatch, and delete. Single keys stay quiet while you are typing or while a surface is
-open, and `Esc` always closes the topmost one. No browser shortcut is overridden.
+opens a command palette: type to fuzzy-find a skill or an action — `New skill…`, `New microskill…`,
+`Edit daily target…`, `Log today…`, start or stop the session, `Delete…`, `Keyboard shortcuts`,
+`Switch to…` — then arrow to it and press `Enter`. `?` opens the shortcut cheatsheet; `⌘⇧N`
+(or `Ctrl+Shift+N`) opens a new microskill, `1`–`9` jump straight to a skill, `↑`/`↓` (or the rail's
+`←`/`→`) move between them, and `N`, `T`, `L`, `S`, `D` reach new-skill, retarget, log-today, the
+stopwatch, and delete. Single keys stay quiet while you are typing or while a surface is open, and
+`Esc` always closes the topmost one. The console claims only its own combinations; every other browser
+shortcut is left alone. (`⌘⇧N` is the one exception on macOS, where the browser also uses it for a new
+incognito window — the palette's `New microskill…` is the fallback if the browser wins.)
 
 ---
 
@@ -188,11 +210,17 @@ This repository currently holds a **design prototype**, not a finished app.
   dependencies beyond the Inter webfont. **Variant 1 — "Console"** is final and is the only UI in
   the file: the rail, the 42-icon add-skill dialog, the graph, the three metrics, the milestone row,
   the logger, the target slider, the press-and-hold stopwatch, the press-drag swipe that sets a day's
-  hours, gesture-only skill deletion, and the `⌘K` command palette with its shortcut layer. Variants 2
-  and 3 have been removed.
-- Data is **seeded demo data**, generated deterministically in the browser. Logging works for the
-  session, but nothing is persisted yet; a running stopwatch is lost on reload. A skill created in
-  the dialog starts with an empty log.
+  hours, gesture-only skill deletion, microskills, and the `⌘K` command palette with its shortcut
+  layer. Variants 2 and 3 have been removed.
+- Data is **local-first**. On first run [`store.js`](./store.js) seeds the deterministic demo once and
+  writes it to `localStorage` under `tenk.v1`; from then on, skills, logs, targets, the active skill,
+  and each skill's horizon survive a reload. A corrupt payload is backed up under `tenk.v1.backup` and
+  the demo is reseeded rather than the page failing. The store never throws when storage is missing or
+  blocked (including some `file://` contexts). A running stopwatch still does not survive a reload —
+  it is written only when the session is logged or discarded.
+- [`store.js`](./store.js) — the dependency-free persistence module (versioned envelope, validation,
+  migration, corrupt-payload fallback). [`store.test.js`](./store.test.js) exercises the contract in
+  Node. [`microskill.css`](./microskill.css) holds the microskill-only rail, header, and dialog marks.
 - [`design.md`](./design.md) — the canonical design system for everything built next. Its **§17
   Archive** keeps the reusable components from the retired variants (ring, pill nav, centered cards,
   sidebar list, mini bars, comparison rows) with full specifications.
@@ -205,6 +233,14 @@ Open `index.html` in a browser. That's it.
 open index.html
 ```
 
+Persistence uses `localStorage`. Some browsers restrict it on `file://` origins; if you want the full
+local-first behaviour (and the Node store tests), serve the directory:
+
+```
+python3 -m http.server 8899
+node store.test.js
+```
+
 ---
 
 ## Roadmap
@@ -213,9 +249,10 @@ Near term, in order:
 
 1. **Console polish.** Tighten hover and keyboard states, verify the graph at every breakpoint, and
    finish the reduced-motion pass.
-2. **Persistence.** Local storage first, with an exportable JSON file. No account required. Persist
-   an in-flight session as `{skill, day, startedAt}` so a refresh can resume the clock against the
-   same day.
+2. **Persistence.** Local storage ships in [`store.js`](./store.js) — versioned payload, migration,
+   corrupt-payload fallback. Still to come: persisting an in-flight session as
+   `{skill, day, startedAt}` so a refresh can resume the clock against the same day. No account
+   required.
 3. **Real logging.** Accessible dialog semantics, cell hit areas on touch, a visible focus state in
    the input, and a polite live-region announcement on commit.
 4. **Skill management.** Creation ships as the rail's add dialog (name, icon, hue, target), the
@@ -235,12 +272,15 @@ gamified badges, AI coaching. The product's value is its quietness.
 
 ```
 .
-├── index.html    # self-contained Console prototype (Variant 1 only)
-├── gallery.html  # standalone port of the React Bits DraggableGrid hobby gallery
-├── images/       # 20 hobby images used by gallery.html
-├── design.md     # design system, tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones
+├── index.html      # self-contained Console prototype (Variant 1 only)
+├── store.js        # local-first persistence: tenk.v1, validation, migration, fallback
+├── store.test.js   # Node tests for the persistence contract
+├── microskill.css  # microskill-only rail, header, and dialog marks
+├── gallery.html    # standalone port of the React Bits DraggableGrid hobby gallery
+├── images/         # 20 hobby images used by gallery.html
+├── design.md       # design system, tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones, §23 microskills
 ├── reference.html
-└── README.md     # this file
+└── README.md       # this file
 ```
 
 ---
