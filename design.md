@@ -673,6 +673,8 @@ Typing picks the icon. Each of the 42 glyphs carries a lowercase vocabulary (`IC
 | File | Role |
 | --- | --- |
 | `index.html` | Self-contained prototype: tokens, components, demo data, interactions |
+| `share-card.css` | Hold affordance on the page title (§22) |
+| `share-card.js` | 1080 × 1920 poster composer, download, keyboard fallback (§22) |
 | `design.md` | This document — canonical visual and behavioural spec |
 | `README.md` | Product premise, philosophy, status, roadmap |
 
@@ -1149,3 +1151,70 @@ The silhouette is calm and identical in every state: only the material changes.
 `<ul role="list">` with `<li>` cards. Every card carries a name: `100 hours — achieved`, `250 hours — 148 of 250, not yet`, `500 hours — not yet`. A card is not a control: no `button` role, click, or focus target; the strip is `tabindex="0"` with an `aria-label` to scroll the overflow. A crossing announces once — `Milestone reached — 100 hours, Piano.` — and one quiet toast (`Milestone · 100 hours`). `prefers-reduced-motion`: no settle, no sheen, no animated scroll; the state changes at once.
 
 **What not to add.** Gold outside these cards, a countdown or "hours to go" string, a per-card click, a looping shine, a header badge, or an editable threshold.
+
+---
+
+## 22. Share card — hold the title
+
+The page's outward face: a poster for a story, not a screenshot of the console. It adds no resting surface. The title gains a second verb, the same grammar as a held day or rail icon.
+
+### 22.1 Trigger
+
+| Action | Result |
+| --- | --- |
+| Hold the `.head h1` for `650ms` (mouse, touch, pen) | Compose a `1080 × 1920` PNG and download it |
+| Release before `650ms` | Nothing; an ordinary click still only focuses the heading |
+| Move more than `10px`, scroll, `pointercancel`, `blur`, or a skill switch | Cancel quietly; no card |
+| Focus the title, press `Shift + Enter` | Same card, no hold |
+| Hover or focus the title | Hairline track under the word and one hint: `hold to share · ⇧↵` |
+
+Primary pointer only. The hold suppresses native text selection, the iOS callout, and the context menu; a hairline under the title fills in `hsl(var(--hue),55%,52%)` at hold progress. The click produced by a completed hold has no action to swallow — the `h1` has no click verb.
+
+The hint is not resting chrome: it exists only on `:hover`, `:focus`, or while the card is being prepared. Its full instruction lives in the heading's `aria-label` and `title`.
+
+### 22.2 Format
+
+| Property | Spec |
+| --- | --- |
+| Size | `1080 × 1920` (9:16), exactly |
+| Renderer | Canvas 2D, no libraries, no external images |
+| Type | Inter `200`/`300`/`400`; wait for `document.fonts.ready` |
+| Surface | full-bleed page colour, no rounded frame or browser chrome |
+| File | `10k-<slug>-<YYYY-MM-DD>.png`; slug is diacritic-stripped lowercase |
+| Delivery | `canvas.toBlob` → object URL → temporary `<a download>` click → revoke |
+
+### 22.3 Composition
+
+Two compositions were built and inspected. **Editorial** is canonical: left-aligned, 88px margins, the same vertical spine as the console. A centred **plate** was tested and rejected — symmetrical, generic, and less like a page torn from this product.
+
+| Block | Baseline (1080 × 1920) |
+| --- | --- |
+| Wordmark `10,000 HOURS` and date | `124` |
+| Section rule | `176` |
+| Skill title `140px/200` | `382` |
+| Cumulative number `250px/200` | `782` |
+| Distance bar `6px` | `836` |
+| Graph label / month axis / grid | `990` / `1034` / `1056` |
+| Next milestone and pace | label `1286`, value `1370` |
+| Milestone band | `1570` |
+| Footer rule / `10k · one skill, one page` | `1780` / `1842` |
+
+The graph is the hero: 53 columns × 7 rows, `4px` gaps, `13.13px` cells in the §4.3 ramp on the skill hue, future days absent. Months are a `22px` tracked axis; colliding labels drop, and the current month is kept at the right edge so the year closes. A `2px` hairline at `1224` separates the graph from the two answers beneath it.
+
+ETA reads the **next milestone**, never 10,000 unless that is the next threshold: the label carries `NEXT MILESTONE` and the exact threshold, the value is `Mon YYYY`, and a ten-tick ruler places the dot by years. Pace is the `28-day mean`, with a 14-bar sparkline and a dashed target. Zero days are a neutral `2.5px` baseline, not a second accent rule. The cumulative bar keeps §6.9's 1%-per-100-hours mapping, so it is distance rather than a gauge.
+
+### 22.4 Palette
+
+The card reads the page at composition time with `getComputedStyle(document.documentElement)`: `--bg`, `--ink`, `--ink-soft`, `--line`, `--surface`, `--ink-faint`, `--cell-empty`. Missing values fall back to `#fff`, `#101010`, `#6b6b6b`, `#f1f1f1`, `#fff`, `#bdbdbd`, `#f4f4f4`. A background luminance below `0.45` selects the dark variant: dark hairlines and empty cells, a lighter cell ramp, and the skill hue at `62% 64%` for legibility.
+
+Neutral type and hairlines carry every word; the skill hue appears only in data ink — graph cells, bar fill, ETA dot, sparkline. Gold appears only in the milestone band, using §21's foil gradient, rim, inner ring and specular on achieved discs; the next disc is a hollow hairline with a hue progress arc between its neighbours; locked discs are hollow hairlines. No second accent, no gradients in the page itself, no decorative colour.
+
+### 22.5 Copy, feedback, accessibility
+
+Micro labels, not sentences: `CURRENT SKILL`, `CUMULATIVE HOURS`, `OF 10,000 H`, `PRACTICE`, `53 WEEKS`, `NEXT MILESTONE`, `PACE`, `28-DAY MEAN`, `MILESTONES`, `n / 11`. The footer is `10k · one skill, one page`; no URL, QR, handle, or product pitch.
+
+After download: `showToast('Share card saved · Piano')` and a polite live-region line — `Share card saved for Piano. 1080 by 1920 pixels.` A failure toasts `Could not save the card` and announces it. The heading is `tabindex="0"`, carries `aria-keyshortcuts="Shift+Enter"`, an `aria-label` naming the skill and both paths, and a `title`. Keyboard focus uses a `2px` outline in `--ink` at `6px`. The hold is never the only path.
+
+`prefers-reduced-motion` keeps the hold and its progress meter but removes the flourish: no transition on the track, no completion flash. The card itself is always a still image.
+
+**What not to add.** A screenshot of the console, browser chrome, URLs or QR codes, a Web Share dependency, a file picker, confetti or sound, all-skill recaps, an animated poster, an ETA to 10,000 when the next threshold is nearer, gold outside the milestone discs, or a second accent.
