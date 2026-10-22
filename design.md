@@ -687,6 +687,7 @@ Typing picks the icon. Each of the 42 glyphs carries a lowercase vocabulary (`IC
 | `store.js` | Local-first persistence: `tenk.v1` envelope, validation, migration, corrupt fallback (§23.6) |
 | `store.test.js` | Node tests for the store contract (`node store.test.js`) |
 | `microskill.css` | Microskill-only marks: rail dot and tooltip, header goal mark, dialog goal badge |
+| `gallery.html` | Standalone image-led index of hobbies; supported tiles deep-link into the console (§24) |
 | `design.md` | This document — canonical visual and behavioural spec |
 | `README.md` | Product premise, philosophy, status, roadmap |
 
@@ -1403,3 +1404,93 @@ badge, or icon family; a ring or progress arc in the rail; a special graph, cell
 countdown, percentage, or "hours to go"; gold outside the milestone row; auto-promoting a skill to
 micro because its target is small; or an in-dialog horizon slider. The horizon is chosen once, at
 creation, and everything else stays the same instrument.
+
+---
+
+## 24. Gallery — the visual index
+
+The gallery (`gallery.html`) is the one image-led surface. It is not a second console: no rail, no metrics, no skill hue. A black field, photography as the only colour, and two hairline pills as chrome. It is the visual answer to "which hobbies could I keep?", linked from the console header and back into an exact skill page.
+
+### 24.1 Entry on the console
+
+One control, in the header's right cluster before the legend. It is the first thing in `.head-tools`; the legend follows, the hold hint stays below. It never enters the rail or the canvas.
+
+| Property | Spec |
+| --- | --- |
+| Control | `30px` tall, `1px solid #ececec`, radius `8px`, `padding:0 10px 0 8px`, `gap:6px`, `flex:0 0 auto` |
+| Icon | `17px` 2×2 grid — four `7 × 7` rounded rects on the 24-box, `stroke 1.2`, `fill:none`, `rx:1.6`; no fifth stroke |
+| Label | `gallery`, lowercase, `10.5px/300`, `0.02em`, `#767676` |
+| Hover | text `#111`, background `#fafafa`, border `#e4e4e4` |
+| Press | `scale(.97)`, `120ms` |
+| Focus | `outline:2px solid #111; outline-offset:2px` |
+| Access | real `<a href="gallery.html">`, `aria-label="Open the hobby gallery"` |
+| Arrival | the four cells fade/scale in place, `420ms`, `60ms` stagger; the page's own `viewIn` still owns the canvas |
+
+At `≤520px` the control keeps icon and label; `.head-tools` tightens to `14px`. It sits on the header's left stack with the legend and must not wrap or split. Reduced motion removes the cell stagger. No tooltip repeats the label; no second gallery link is added to the rail, palette, or canvas.
+
+### 24.2 The field
+
+| Property | Spec |
+| --- | --- |
+| Grid | `15 × 15 = 225` tiles, `200px` square, `20px` gaps, tile radius `15px`, deterministic seed `0xc0ffee` (`distribute2DGrid`) |
+| Surface | `background:var(--bg,#000)`; tile `var(--surface,#1a1a1f)`; text `var(--ink,#fff)` |
+| Drag | unchanged: `CLICK_SLOP 5px`, exponential inertia `τ .325s`, rest speed `8px/s`, velocity window `100ms`, `MAX_SPEED 5000` |
+| Vignette | fixed, `pointer-events:none`: radial `125% × 105%` at `50% 48%`, transparent `38%` → `rgba(0,0,0,.28)` `72%` → `.66` `100%`; plus `rgba(0,0,0,.32)` at top/bottom `13%` |
+| Entrance | tile `opacity 0→1`, `scale(.975)→1`, `translateY(6px)→0`, `720ms`; delay `(row + col) × 13ms`, `animation-fill-mode:backwards` |
+| Hint | centred `33px` hairline pill: four-way move glyph + `drag to explore`, `·`, pointer glyph + `click to open`; `9.5px/300`, `rgba(255,255,255,.55)` |
+| Home | top-left `33px` hairline pill, `14px` back chevron + `home`; `aria-label="Back to the 10,000 Hours console"` |
+| Chrome in | `opacity 0→1`, `translateY(-4px)→0`, `550ms`; home at `420ms`, hint at `720ms`, `backwards` |
+
+The hint retires on the first pointerdown or keyboard focus in the field: `opacity → 0`, `translate(-50%, 6px)`, then `hidden` after `420ms` (`0ms` under reduced motion). It is `aria-hidden`, never a banner, and never returns in the session. The home pill stays quietly at `rgba(0,0,0,.42)` with a `14px` blur; hover raises text to `--ink` and border to `rgba(255,255,255,.32)`.
+
+No skill hue appears here. No counters, filters, chips, search field, tile captions, or card material.
+
+### 24.3 Supported and unsupported
+
+Mapping lives in one documented table at the top of `gallery.html`:
+
+| Hobby image | Console skill |
+| --- | --- |
+| `Piano` | `Piano` |
+| `Painting` | `Drawing` |
+| `Coding` | `Programming` |
+| `Running` | `Running` |
+
+There is no Japanese image; `Japanese` is therefore unsupported. `DEFAULT_SKILLS = Piano, Drawing, Programming, Running, Japanese` is the fallback only. On boot the gallery reads `tenk.v1` defensively: `{habits:[{name}]}`; absent, corrupt, malformed, or empty falls back to the defaults. It never writes the key. A saved skill whose name equals a hobby case-insensitively wins first (`Chess` lights `Chess`); otherwise the mapped target must exist, and the stored casing is preserved (`piano` → `index.html?skill=piano`).
+
+**Supported.** Colour photograph, `role="link"`, `tabindex="0"`, `aria-label="Open <skill>"`, `data-href="index.html?skill=<skill>"`. Click (after a sub-`5px` press), `Enter`, or `Space` navigates in the same tab. A drag never navigates; pointercancel never navigates.
+
+**Unsupported.** `filter:grayscale(1)`, brightness `.82`, `opacity:.45`; no pointer cursor; `role="link"`, `aria-disabled="true"`, `tabindex="-1"`, `aria-label="<Hobby> — coming soon"`. Hover lifts opacity to `.6` only. It remains visible as a preview, not hidden and not removed.
+
+### 24.4 Names on approach
+
+Each tile carries one `aria-hidden` bottom layer: a gradient from `rgba(0,0,0,.72)` to transparent, `padding:38px 14px 13px`, revealed at `opacity 0→1`, `translateY(4px)→0`, `280ms`. The name is `13px/300` with a soft text shadow. Supported tiles end in a `23px` hairline circle with an up-right arrow; unsupported tiles end in a `4px` dot + `soon`, `8px/400`, `.15em` uppercase at `55%` white. No permanent labels.
+
+On precise pointers a supported photograph scales to `1.035` over `650ms`; unsupported stays still. While dragging, `.is-dragging` cancels the zoom and hides every meta layer. Keyboard focus uses the same reveal, so names are never pointer-only.
+
+### 24.5 Deep link back to a skill
+
+On boot the console reads `?skill=<name>` from `URLSearchParams`, trims it, and selects the first habit whose name matches case-insensitively. Found: the page renders that skill, the rail marker follows, `scrollY` stays `0`. Not found: the default selection stays and nothing is announced. The URL is not rewritten when skills switch; the parameter is honoured once, at boot. The gallery's home pill returns to `index.html` without a parameter.
+
+### 24.6 Motion
+
+| Element | Motion | Duration |
+| --- | --- | --- |
+| Tile entrance | opacity, `scale(.975→1)`, `translateY(6→0)` | `720ms`, delay `13ms × (row + col)` |
+| Home / hint | opacity, `translateY(-4/6→0)` | `550ms`, delays `420/720ms` |
+| Meta reveal | opacity, `translateY(4→0)` | `280ms` |
+| Image approach | `scale(1→1.035)` | `650ms` |
+| Home focus pan | transform to bring the tile inside a `64px` margin | `450ms` |
+| Hint retire | opacity, `translate(-50%, 6px)` | `350ms` |
+
+One easing: `cubic-bezier(.2,.8,.2,1)`. No loops, springs, parallax, or ambient drift. `prefers-reduced-motion: reduce` removes tile/chrome entrances, image zoom, focus-pan transition, and meta transitions; the overlay still appears and the grid still drags.
+
+### 24.7 Accessibility
+
+Supported tiles are links to assistive technology: `role="link"`, `tabindex="0"`, `aria-label="Open Piano"`, `Enter`/`Space` activation. Unsupported tiles expose their hobby name and disabled state but are removed from the tab order. The focus ring is `2px` in `--ink` with `3px` offset and a dark halo so it survives photography. Focusing a tile outside the viewport pans the field until the tile sits inside a `64px` margin — pointer drags are unaffected, and the pan transition cancels the moment a drag begins.
+
+The drag surface itself is a `role="group"` labelled `Hobby gallery`; a visually hidden `h1` names the screen. The home pill is a real link with an explicit accessible name; the hint is decorative and `aria-hidden`. Images keep their hobby `alt`; the meta layer is `aria-hidden` so names are not announced twice.
+
+### 24.8 What not to add
+
+Permanent labels on every tile, a second accent, the skill hue, tile cards or shadows, counts and progress on the gallery, hidden unsupported tiles, a filter/search bar, an explicit drag mode, a second back button, or a text banner in place of the hint. Keep the photography and the drag as the interface.
