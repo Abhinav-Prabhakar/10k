@@ -106,6 +106,15 @@ rim. The row is the only place gold appears in the interface; it is not a badge 
 awarded for showing up, and every card marks hours the graph already counts. The material and the three
 states are specified in [`design.md` §21](./design.md#21-milestones--struck-gold).
 
+### Sharing a card
+
+Hold the skill title for a moment — or focus it and press `Shift+Enter` — and the page composes a
+1080 × 1920 poster: the wordmark and date, the skill, cumulative hours with its distance bar, the
+year's graph, the next milestone's date, pace with a sparkline, and the gold thresholds. It downloads
+directly as `10k-piano-2026-10-22.png`. The card is drawn in Canvas from the same tokens, so a dark
+page yields a dark poster; a short click is still just a click, and the hint lives only on hover or
+focus.
+
 ### Getting around
 
 The icon rail holds one page per skill. Arrow keys move between skills; the rail's active marker
@@ -236,9 +245,11 @@ gamified badges, AI coaching. The product's value is its quietness.
 ```
 .
 ├── index.html    # self-contained Console prototype (Variant 1 only)
+├── share-card.css # hold-to-share title affordance (design.md §22)
+├── share-card.js  # 1080 × 1920 poster composer and download (§22)
 ├── gallery.html  # standalone port of the React Bits DraggableGrid hobby gallery
 ├── images/       # 20 hobby images used by gallery.html
-├── design.md     # design system, tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones
+├── design.md     # design system, tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones, §22 share card
 ├── reference.html
 └── README.md     # this file
 ```
