@@ -125,6 +125,28 @@ it and press `Delete`/`Backspace` — and a short confirm names the skill and wh
 delete button. `Esc` or `cancel` leaves everything intact, and the last remaining skill cannot be
 deleted (`Keep at least one skill.`).
 
+### The gallery
+
+A button in the header — four small cells and the word `gallery`, beside the legend — opens the visual index:
+225 photographs you can drag, flick, and throw, laid out deterministically so the same hobbies always sit in the
+same places. It is the one image-led screen, so the photographs carry all the colour; the chrome stays a black
+field with hairline pills.
+
+A tile whose hobby exists as a skill is live: the photograph stays in colour, its name and an arrow appear on
+approach, and a click (or `Enter`/`Space`) opens that exact page — `index.html?skill=Piano`. A tile with no skill
+yet is a quiet preview: desaturated, dimmed, marked `soon`, and inert. Names live on hover and keyboard focus, not
+on the resting grid. Supported tiles lead to `Piano`, `Painting` → `Drawing`, `Coding` → `Programming`, and
+`Running`; the mapping is one documented table inside `gallery.html`, so adding a new image and skill is a one-line
+change. `Japanese` has no image yet and is therefore unsupported.
+
+The index reads saved skills from `tenk.v1` when they exist, defensively, and falls back to the five defaults; it
+never writes. A user-created skill named after a hobby (`Chess`) lights that tile automatically. The map is
+documented in [`design.md` §24](./design.md#24-gallery--the-visual-index).
+
+`drag to explore · click to open` appears once at the bottom and retires after the first gesture. A small `home`
+pill returns to the console. The console also accepts the reverse route: `index.html?skill=Running` selects
+`Running` on boot, case-insensitively, without scrolling or rewriting the URL.
+
 ### Keyboard
 
 The console is fully drivable from the keyboard, and the palette is the front door. `⌘K` (or `Ctrl+K`)
@@ -189,13 +211,17 @@ This repository currently holds a **design prototype**, not a finished app.
   the file: the rail, the 42-icon add-skill dialog, the graph, the three metrics, the milestone row,
   the logger, the target slider, the press-and-hold stopwatch, the press-drag swipe that sets a day's
   hours, gesture-only skill deletion, and the `⌘K` command palette with its shortcut layer. Variants 2
-  and 3 have been removed.
+  and 3 have been removed. The header's `gallery` control opens the visual index; `?skill=<name>`
+  deep-links into a skill.
+- [`gallery.html`](./gallery.html) — standalone draggable index of 225 hobby photographs. Four hobby
+  types map to existing skills and open their pages; the rest are grayscale previews marked `soon`.
+  Reads `tenk.v1` defensively when present. A `home` pill returns to the console.
 - Data is **seeded demo data**, generated deterministically in the browser. Logging works for the
   session, but nothing is persisted yet; a running stopwatch is lost on reload. A skill created in
   the dialog starts with an empty log.
 - [`design.md`](./design.md) — the canonical design system for everything built next. Its **§17
   Archive** keeps the reusable components from the retired variants (ring, pill nav, centered cards,
-  sidebar list, mini bars, comparison rows) with full specifications.
+  sidebar list, mini bars, comparison rows) with full specifications; **§24** specifies the gallery.
 
 ### Running it
 
@@ -236,9 +262,9 @@ gamified badges, AI coaching. The product's value is its quietness.
 ```
 .
 ├── index.html    # self-contained Console prototype (Variant 1 only)
-├── gallery.html  # standalone port of the React Bits DraggableGrid hobby gallery
+├── gallery.html  # draggable 225-photo hobby index; supported tiles deep-link into the console
 ├── images/       # 20 hobby images used by gallery.html
-├── design.md     # design system, tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones
+├── design.md     # design system: tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones, §24 gallery
 ├── reference.html
 └── README.md     # this file
 ```
