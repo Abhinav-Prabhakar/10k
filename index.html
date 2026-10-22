@@ -793,6 +793,7 @@ body.dialog-open{overflow:hidden}
 }
 </style>
 <link rel="stylesheet" href="share-card.css">
+<link rel="stylesheet" href="microskill.css"/>
 </head>
 <body>
 
@@ -853,8 +854,19 @@ body.dialog-open{overflow:hidden}
 <!-- create skill -->
 <div class="backdrop" id="dlgBack" hidden>
   <div class="dialog" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
-    <h2 class="dlg-title" id="dlgTitle">New skill</h2>
-    <p class="dlg-sub">A page, a graph, a target.</p>
+    <div class="dlg-head">
+      <div>
+        <h2 class="dlg-title" id="dlgTitle">New skill</h2>
+        <p class="dlg-sub" id="dlgSub">A page, a graph, a target.</p>
+      </div>
+      <div class="dlg-goal" id="dlgGoal" hidden>
+        <svg class="dlg-goal-ring" viewBox="0 0 22 22" aria-hidden="true" focusable="false">
+          <circle class="track" cx="11" cy="11" r="8"/>
+          <circle class="arc" cx="11" cy="11" r="8"/>
+        </svg>
+        <span class="dlg-goal-label"><b>1,000</b> h</span>
+      </div>
+    </div>
 
     <div class="dlg-field">
       <label class="dlg-label" for="dlgName">Name</label>
@@ -935,6 +947,7 @@ body.dialog-open{overflow:hidden}
         <h3 class="keys-title">Skills</h3>
         <div class="keys-list">
           <div class="keys-row"><span class="keys-keys"><kbd class="kbd">N</kbd></span><span class="keys-label">new skill</span></div>
+          <div class="keys-row"><span class="keys-keys"><kbd class="kbd" id="keysMicro">⌘⇧N</kbd></span><span class="keys-label">new microskill</span></div>
           <div class="keys-row"><span class="keys-keys"><kbd class="kbd">T</kbd></span><span class="keys-label">edit daily target</span></div>
           <div class="keys-row"><span class="keys-keys"><kbd class="kbd">D</kbd></span><span class="keys-label">delete current skill</span></div>
         </div>
@@ -983,6 +996,7 @@ body.dialog-open{overflow:hidden}
 
 <div class="tip" id="tip"></div>
 
+<script src="store.js"></script>
 <script>
 /* ============================================================
    ICONS
@@ -1059,7 +1073,13 @@ function mulberry32(a){
   };
 }
 
-const HABITS = [
+const FULL_GOAL = 10000;
+const MICRO_GOAL = 1000;
+const goalOf = h => h.goal || FULL_GOAL;
+/* only the thresholds that exist inside this skill's horizon */
+const milestonesFor = h => MILESTONES.filter(m => m <= goalOf(h));
+
+const SEED_HABITS = [
   {name:'Piano',       hue:268, target:3,   icon:'piano',    seed:1103},
   {name:'Drawing',     hue:205, target:2,   icon:'drawing',  seed:2711},
   {name:'Programming', hue:152, target:4,   icon:'code',     seed:4317},
@@ -1089,7 +1109,44 @@ function genLog(seed, target){
   }
   return log;
 }
-HABITS.forEach(h => { h.log = genLog(h.seed, h.target); });
+
+function seedHabits(){
+  return SEED_HABITS.map(h=>{
+    const log = genLog(h.seed, h.target);
+    return {
+      name:h.name, hue:h.hue, target:h.target, icon:h.icon,
+      goal:FULL_GOAL, micro:false,
+      createdAt:Object.keys(log).sort()[0] || keyOf(today),
+      log,
+    };
+  });
+}
+
+/* a habit restored from storage may predate goal/micro; fill only what is missing */
+function normalizeHabit(h){
+  const micro = h.micro === true;
+  return Object.assign({}, h, {
+    goal: h.goal || (micro ? MICRO_GOAL : FULL_GOAL),
+    micro,
+    createdAt: h.createdAt || keyOf(today),
+    log: h.log || {},
+  });
+}
+
+/* hydrate before the first render; a missing key seeds the deterministic demo once */
+const BOOT = (()=>{
+  const store = window.TenkStore;
+  if(store){
+    const res = store.load();
+    if(res.status === 'ok'){
+      return {habits: res.data.habits.map(normalizeHabit), hi: res.data.hi};
+    }
+  }
+  const habits = seedHabits();
+  if(store) store.save(habits, 0);
+  return {habits, hi:0};
+})();
+const HABITS = BOOT.habits;
 
 /* ============================================================
    STATS
@@ -1117,21 +1174,23 @@ function stats(h){
   const W = 28;
   const recent = days.slice(-W);
   const pace = recent.reduce((s,x)=>s+x.v, 0) / W;
-  const remaining = Math.max(0, 10000 - total);
-  /* ETA answers "when is the next milestone?", not "when is 10,000?"
-     The cumulative bar still measures distance to the summit. */
-  const nextMs = MILESTONES.find(m => total < m) || null;
-  const goal = nextMs === null ? 10000 : nextMs;
+  const skillGoal = goalOf(h);
+  const remaining = Math.max(0, skillGoal - total);
+  /* ETA answers "when is the next milestone?", not "when is the goal?"
+     The cumulative bar measures distance to the skill's own goal. */
+  const nextMs = milestonesFor(h).find(m => total < m) || null;
+  const goal = nextMs === null ? skillGoal : nextMs;
   const toGoal = Math.max(0, goal - total);
-  const etaDays = pace > 0 ? toGoal / pace : Infinity;
-  const eta = isFinite(etaDays) ? addDays(today, Math.round(etaDays)) : null;
+  const etaDays = nextMs !== null && pace > 0 ? toGoal / pace : Infinity;
+  const eta = nextMs !== null && isFinite(etaDays) ? addDays(today, Math.round(etaDays)) : null;
 
   let streak = 0;
   let i = days.length - 1;
   if(days[i] && days[i].v === 0) i--;
   for(; i >= 0; i--){ if(days[i].v > 0) streak++; else break; }
 
-  return {days, total, first, sessions, pace, remaining, nextMs, goal, toGoal, eta, etaDays, ratio: pace / h.target, streak};
+  return {days, total, first, sessions, pace, remaining, skillGoal, complete: total >= skillGoal,
+          nextMs, goal, toGoal, eta, etaDays, ratio: pace / h.target, streak};
 }
 
 /* ============================================================
@@ -1170,8 +1229,20 @@ const cellLabel = (k, v) => `${longDate(k)}, ${v > 0 ? fmtDur(v) + ' logged' : '
 /* ============================================================
    STATE
    ============================================================ */
-const state = {hi:0, habit:HABITS[0], editing:null, session:null, timed:false, dragged:false};
+const state = {hi:BOOT.hi, habit:HABITS[BOOT.hi] || HABITS[0], editing:null, session:null, timed:false, dragged:false};
 const prevNums = {};
+
+/* one write path for every mutation; a short debounce keeps a scrub from
+   touching storage on each pointermove, while pagehide flushes immediately */
+let saveTimer = null;
+function saveState(opts){
+  if(!window.TenkStore) return;
+  clearTimeout(saveTimer);
+  const write = ()=>window.TenkStore.save(HABITS, state.hi);
+  if(opts && opts.now) write();
+  else saveTimer = setTimeout(write, 80);
+}
+window.addEventListener('pagehide', ()=>saveState({now:true}));
 
 /* ============================================================
    GRAPH BUILDER
@@ -1226,7 +1297,7 @@ function rulerHTML(h, s){
 }
 
 function metricsHTML1(h, s){
-  const pct = Math.min(100, s.total / 100);
+  const pct = Math.min(100, s.total / (s.skillGoal / 100));
   return `<section class="metrics"><div class="tiles">
 
     <div class="tile">
@@ -1241,7 +1312,7 @@ function metricsHTML1(h, s){
     <div class="tile">
       <div class="t-top">
         <span class="t-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS.cal}</svg>ETA</span>
-        <span class="t-hint">${s.total >= 10000 ? '10,000 h reached' : (s.eta ? `next ${fmtInt(s.nextMs)} h · ${fmtInt(s.etaDays)} days` : 'no pace yet')}</span>
+        <span class="t-hint">${s.complete ? `${fmtInt(s.skillGoal)} h reached` : (s.eta ? `next ${fmtInt(s.nextMs)} h · ${fmtInt(s.etaDays)} days` : 'no pace yet')}</span>
       </div>
       <div class="t-value"><span class="date">${s.eta ? fmtMonYr(s.eta) : '—'}</span></div>
       ${rulerHTML(h, s)}
@@ -1266,8 +1337,6 @@ function metricsHTML1(h, s){
    these cards; the section frame stays neutral.
    ============================================================ */
 const MILESTONES = [1, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
-const MS_TOTAL = MILESTONES.length;
-const MS_SUMMIT = MILESTONES[MS_TOTAL - 1];
 const MS_CAPTION = {
   1:'first hour', 10:'the habit', 25:'a cadence', 50:'the work', 100:'a hundred',
   250:'committed', 500:'a craft', 1000:'a thousand', 2500:'a calling',
@@ -1285,8 +1354,8 @@ const msSeen = new WeakMap();
 let msLastHit = 0;
 
 const msUnit = m => m === 1 ? 'hour' : 'hours';
-const msNext = total => { for(const m of MILESTONES) if(total < m) return m; return null; };
-const msState = (m, total) => total >= m ? 'achieved' : (m === msNext(total) ? 'next' : 'locked');
+const msNext = (total, list) => { for(const m of list) if(total < m) return m; return null; };
+const msState = (m, total, next) => total >= m ? 'achieved' : (m === next ? 'next' : 'locked');
 const msFont = m => { const s = fmtInt(m).length; return s <= 3 ? 30 : (s <= 5 ? 26 : 22); };
 function msLabel(m, total, st){
   if(st === 'achieved') return `${fmtInt(m)} ${msUnit(m)} — achieved`;
@@ -1298,12 +1367,15 @@ const msFillPct = (m, total, st) =>
 
 function milestonesHTML(h, s){
   const total = s.total;
+  const list = milestonesFor(h);
+  const next = msNext(total, list);
+  const summit = list[list.length - 1];
   let achieved = 0;
-  const cards = MILESTONES.map(m=>{
-    const st = msState(m, total);
+  const cards = list.map(m=>{
+    const st = msState(m, total, next);
     if(st === 'achieved') achieved++;
     const pct = msFillPct(m, total, st);
-    return `<li class="ms-card${m === MS_SUMMIT ? ' ms-card--summit' : ''}" data-t="${m}" data-state="${st}" aria-label="${msLabel(m, total, st)}">
+    return `<li class="ms-card${m === summit ? ' ms-card--summit' : ''}" data-t="${m}" data-state="${st}" aria-label="${msLabel(m, total, st)}">
       ${MS_ROSE}
       <span class="ms-gloss" aria-hidden="true"></span>
       <span class="ms-num" style="font-size:${msFont(m)}px">${fmtInt(m)}</span>
@@ -1315,9 +1387,9 @@ function milestonesHTML(h, s){
   return `<section class="milestones" aria-label="Milestones">
     <div class="ms-head">
       <span class="t-label">Milestones</span>
-      <span class="ms-count" id="msCount">${achieved} / ${MS_TOTAL}</span>
+      <span class="ms-count" id="msCount">${achieved} / ${list.length}</span>
     </div>
-    <ul class="ms-strip" id="msStrip" role="list" tabindex="0" aria-label="Milestones for ${h.name}, ${MS_TOTAL} cards">${cards}</ul>
+    <ul class="ms-strip" id="msStrip" role="list" tabindex="0" aria-label="Milestones for ${h.name}, ${list.length} cards">${cards}</ul>
   </section>`;
 }
 
@@ -1329,13 +1401,15 @@ function refreshMilestones(opts){
   if(!strip) return;
   const h = state.habit;
   const total = typeof opts.total === 'number' ? opts.total : stats(h).total;
+  const list = milestonesFor(h);
+  const next = msNext(total, list);
   const seen = msSeen.get(h) || new Set();
   const fresh = [];
   let achieved = 0;
 
   strip.querySelectorAll('.ms-card').forEach(card=>{
     const m = parseInt(card.dataset.t, 10);
-    const st = msState(m, total);
+    const st = msState(m, total, next);
     if(card.dataset.state !== st) card.dataset.state = st;
     card.setAttribute('aria-label', msLabel(m, total, st));
     const fill = card.querySelector('.ms-base i');
@@ -1347,10 +1421,10 @@ function refreshMilestones(opts){
   });
 
   const count = document.getElementById('msCount');
-  if(count) count.textContent = `${achieved} / ${MS_TOTAL}`;
+  if(count) count.textContent = `${achieved} / ${list.length}`;
 
   /* record before any early return, so a page enter never re-announces old thresholds */
-  msSeen.set(h, new Set(MILESTONES.filter(m => total >= m)));
+  msSeen.set(h, new Set(list.filter(m => total >= m)));
 
   if(opts.quiet || !fresh.length) return;
 
@@ -1384,27 +1458,34 @@ function refreshMilestones(opts){
    VIEW BUILDERS
    ============================================================ */
 function railIcon(x, i){
-  return `<button class="rail-btn ${i===state.hi?'on':''}" data-h="${i}" title="${x.name}">
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[x.icon]}</svg>
+  const micro = x.micro === true;
+  const label = micro ? `${x.name}, microskill, ${fmtInt(goalOf(x))} hours` : x.name;
+  const tip = micro ? `<span class="rail-tip" aria-hidden="true">microskill · ${fmtInt(goalOf(x))} h</span>` : '';
+  return `<button class="rail-btn ${i===state.hi?'on':''}${micro?' is-micro':''}" data-h="${i}" style="--h:${x.hue}" ${micro?'':`title="${x.name}"`} aria-label="${label}">
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[x.icon]}</svg>${tip}
   </button>`;
 }
 
 function view1(h){
   const s = stats(h);
   const root = document.createElement('div');
-  root.className = 'v1 view';
+  root.className = `v1 view${h.micro ? ' is-micro' : ''}`;
   root.style.setProperty('--hue', h.hue);
+  const goalMark = h.micro
+    ? ` · <span class="hsub-goal" title="microskill · ${fmtInt(goalOf(h))} h" aria-label="microskill, ${fmtInt(goalOf(h))} hour goal"><i aria-hidden="true"></i>${fmtInt(goalOf(h))} h</span>`
+    : '';
   root.innerHTML = `
     <nav class="rail">${HABITS.map(railIcon).join('')}
-      <button class="rail-btn rail-add" data-add type="button" title="Add skill" aria-label="Add skill">
+      <button class="rail-btn rail-add" data-add type="button" title="Add skill" aria-label="Add skill" aria-keyshortcuts="Meta+Shift+N Control+Shift+N">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${ICONS.plus}</svg>
+        <span class="rail-tip" aria-hidden="true">${isMac ? '⌘ click' : 'Ctrl click'} · microskill</span>
       </button>
     </nav>
     <main class="main">
       <header class="head">
         <div>
           <h1>${h.name}</h1>
-          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit daily target, ${fmtTarget(h.target)} h/day">${fmtTarget(h.target)} h/day</button></p>
+          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit daily target, ${fmtTarget(h.target)} h/day">${fmtTarget(h.target)} h/day</button>${goalMark}</p>
         </div>
         <div class="head-right">
           <div class="legend">
@@ -1594,6 +1675,7 @@ function applyDay(cell, k, v){
     state.session.base = v;
     tickSession();
   }
+  saveState();
   return v;
 }
 
@@ -1733,6 +1815,7 @@ function commitTarget(){
     refreshMetrics();
     if(state.session && state.session.hi === state.hi) tickSession();
   }
+  saveState();
   announce(`Daily target set to ${fmtTarget(v)} hours.`);
 }
 
@@ -1751,6 +1834,9 @@ targeter.addEventListener('keydown', e=>{
    ============================================================ */
 const dlgBack = document.getElementById('dlgBack');
 const dlg = document.getElementById('dlg');
+const dlgTitle = document.getElementById('dlgTitle');
+const dlgSub = document.getElementById('dlgSub');
+const dlgGoal = document.getElementById('dlgGoal');
 const dlgName = document.getElementById('dlgName');
 const dlgErr = document.getElementById('dlgErr');
 const dlgMatch = document.getElementById('dlgMatch');
@@ -1819,7 +1905,7 @@ const HUE_CHOICES = [
   {h:338, name:'Rose'},
 ];
 
-const dlgState = {icon:'book', hue:45, target:3};
+const dlgState = {icon:'book', hue:45, target:3, micro:false};
 let dlgTimer = null, dlgTrigger = null;
 
 /* ------------------------------------------------------------
@@ -2034,20 +2120,26 @@ dlgHues.innerHTML = HUE_CHOICES.map(o=>`
 syncPickers();
 syncTarget();
 
-function openDialog(){
+function openDialog(opts){
   if(!dlgBack.hidden) return;
   if(!delBack.hidden) return;
+  const micro = !!(opts && opts.micro);
   closeLogger();
   closeTargetEditor({restore:false});
   dlgState.icon = 'book';
   dlgState.hue = 45;
   dlgState.target = 3;
+  dlgState.micro = micro;
   dlgName.value = '';
   dlgName.removeAttribute('aria-invalid');
   dlgErr.textContent = '';
   dlgManualIcon = false;
   dlgMatchId = null;
   dlgMatch.textContent = '';
+  dlg.classList.toggle('is-micro', micro);
+  dlgTitle.textContent = micro ? 'New microskill' : 'New skill';
+  dlgSub.textContent = micro ? 'A page, a graph, a thousand hours.' : 'A page, a graph, a target.';
+  dlgGoal.hidden = !micro;
   syncPickers();
   syncTarget();
 
@@ -2095,10 +2187,13 @@ function createSkill(){
     hue: dlgState.hue,
     target: dlgState.target,
     icon: dlgState.icon,
+    goal: dlgState.micro ? MICRO_GOAL : FULL_GOAL,
+    micro: dlgState.micro,
     createdAt: keyOf(today),
     log: {},
   });
   state.hi = HABITS.length - 1;
+  saveState({now:true});
 
   closeDialog({restore:false});
   render();
@@ -2259,6 +2354,7 @@ function deleteSkill(){
   if(i < state.hi) state.hi -= 1;
   else if(i === state.hi) state.hi = Math.min(i, HABITS.length - 1);
   remapPrevNums(i);
+  saveState({now:true});
 
   closeDeleteConfirm({restore:false});
   render();
@@ -2418,6 +2514,7 @@ function finishSession(auto, keepPill){
 
   state.session = null;
   if(state.editing && s.hi === state.hi && state.editing.k === s.k) closeLogger();
+  saveState();
 
   const cell = (state.hi === s.hi)
     ? document.querySelector(`.cell[data-k="${s.k}"]`)
@@ -2531,6 +2628,7 @@ function paletteItems(){
   });
   [
     {kind:'new',     name:'New skill…',          hint:'N', search:'new skill add create'},
+    {kind:'newmicro', name:'New microskill…',    hint: isMac ? '⌘⇧N' : 'Ctrl⇧N', search:'new microskill micro add create 1000 thousand shorter horizon'},
     {kind:'target',  name:'Edit daily target…',  hint:'T', search:'edit daily target goal hours'},
     {kind:'log',     name:'Log today…',          hint:'L', search:'log today hours enter'},
     {kind:'session', name: state.session ? 'Stop session' : 'Start session',
@@ -2689,13 +2787,14 @@ function runPaletteItem(it){
   if(it.kind === 'skill' || it.kind === 'switch'){
     const h = HABITS[it.i];
     if(!h) return;
-    if(it.i !== state.hi){ state.hi = it.i; render(); }
+    if(it.i !== state.hi){ state.hi = it.i; saveState(); render(); }
     const rail = document.querySelector(`.rail-btn[data-h="${state.hi}"]`);
     if(rail) rail.focus({preventScroll:true});
     announce(`${h.name} selected.`);
     return;
   }
   if(it.kind === 'new'){ openDialog(); return; }
+  if(it.kind === 'newmicro'){ openDialog({micro:true}); return; }
   if(it.kind === 'target'){
     const btn = document.getElementById('targetBtn');
     if(btn) openTargetEditor(btn);
@@ -2795,6 +2894,8 @@ keysBack.addEventListener('keydown', e=>{
 
 const keysMod = document.getElementById('keysMod');
 if(keysMod && !isMac) keysMod.textContent = 'Ctrl+K';
+const keysMicro = document.getElementById('keysMicro');
+if(keysMicro && !isMac) keysMicro.textContent = 'Ctrl⇧N';
 
 /* ============================================================
    SWIPE TO LOG — press a day, drag vertically, release to log
@@ -3142,7 +3243,16 @@ document.addEventListener('pointercancel', ()=>{
   swallowTimer = setTimeout(()=>{ swallowRailClick = false; }, 1200);
 }, true);
 
+/* the plus is also a microskill invitation on macOS (⌘) and Windows/Linux (Ctrl).
+   Cmd+click is the primary Mac path; a Ctrl+click on macOS arrives as contextmenu,
+   so that one case opens the same dialog instead of the native menu. */
 document.addEventListener('contextmenu', e=>{
+  const addBtn = e.target.closest('.rail-add');
+  if(addBtn && e.ctrlKey){
+    e.preventDefault();
+    openDialog({micro:true});
+    return;
+  }
   const railBtn = e.target.closest('.rail-btn[data-h]');
   if(railBtn){
     e.preventDefault();
@@ -3173,7 +3283,7 @@ document.addEventListener('click', e=>{
   const targetBtn = e.target.closest('#targetBtn');
   if(targetBtn){ openTargetEditor(targetBtn); return; }
 
-  if(e.target.closest('[data-add]')){ openDialog(); return; }
+  if(e.target.closest('[data-add]')){ openDialog({micro: !!(e.metaKey || e.ctrlKey)}); return; }
 
   const habitBtn = e.target.closest('[data-h]');
   if(habitBtn){
@@ -3181,6 +3291,7 @@ document.addEventListener('click', e=>{
     const i = parseInt(habitBtn.dataset.h, 10);
     if(i !== state.hi){
       state.hi = i;
+      saveState();
       render();
     }
     return;
@@ -3244,6 +3355,14 @@ document.addEventListener('keydown', e=>{
     openPalette();
     return;
   }
+  /* ⌘⇧N / Ctrl+Shift+N: the keyboard path to a microskill.
+     Not while typing in the logger or the target slider — those keep their value. */
+  if((e.metaKey || e.ctrlKey) && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'n'
+     && !state.editing && !targetEdit){
+    e.preventDefault();
+    openDialog({micro:true});
+    return;
+  }
 
   const ae = document.activeElement;
   const tag = (ae.tagName || '').toLowerCase();
@@ -3260,6 +3379,7 @@ document.addEventListener('keydown', e=>{
     const dir = (e.key === 'ArrowRight' || e.key === 'ArrowDown') ? 1 : -1;
     e.preventDefault();
     state.hi = (state.hi + dir + HABITS.length) % HABITS.length;
+    saveState();
     render();
     return;
   }
@@ -3287,7 +3407,7 @@ document.addEventListener('keydown', e=>{
   }
   if(k >= '1' && k <= '9'){
     const i = parseInt(k, 10) - 1;
-    if(i < HABITS.length){ e.preventDefault(); state.hi = i; render(); }
+    if(i < HABITS.length){ e.preventDefault(); state.hi = i; saveState(); render(); }
   }
 });
 

@@ -499,10 +499,14 @@ type Habit = {
   hue: number;           // 268
   target: number;        // hours/day, e.g. 3
   icon: IconName;
+  goal: number;          // 10000 default, 1000 for a microskill (§23)
+  micro: boolean;        // true only when the goal is the 1,000-hour horizon
   createdAt: string;     // ISO date, local
   log: Record<string, number>; // "YYYY-MM-DD" -> hours, local calendar day
 };
 ```
+
+`goal` is data, never inferred from `name` or `target`; `goalOf(h) = h.goal || 10000` is the single read path. A payload missing `goal` migrates to `10000`; `micro: true` without a goal migrates to `1000`.
 
 - Day keys: **local** calendar days, zero-padded `YYYY-MM-DD`; never UTC — 11pm belongs to that evening. A day is absent or `> 0`; clearing deletes the key, never stores `0`.
 - Hours at **minute precision**, rounded to `1/60`, clamped `0–24`. Manual entry offers quarter-hour steps (`+½`, `+1`, `+2`) but normalises to minutes on commit; a live session (§18) rounds elapsed to the nearest minute, minimum one.
@@ -516,9 +520,14 @@ type Habit = {
 | `sessions` | count of days with `hours > 0` |
 | `first` | earliest day with `hours > 0` |
 | `pace` | mean hours/day over the trailing **28 calendar days**, including zero days |
-| `remaining` | `max(0, 10000 − total)` |
-| `etaDays` | `remaining / pace`; `∞` if `pace = 0` |
-| `eta` | `today + round(etaDays)`; `null` if no pace |
+| `skillGoal` | `goalOf(h)` — `10000` by default, `1000` for a microskill |
+| `remaining` | `max(0, skillGoal − total)` |
+| `nextMs` | lowest threshold **inside this skill's horizon** not yet reached; `null` at the horizon |
+| `goal` (`stats.goal`) | `nextMs ?? skillGoal` — the ETA target, never a second stored number |
+| `toGoal` | `max(0, goal − total)` |
+| `etaDays` | `toGoal / pace` while `nextMs` exists; `∞` if `pace = 0` or the horizon is complete |
+| `eta` | `today + round(etaDays)`; `null` if no pace or the horizon is complete |
+| `complete` | `total ≥ skillGoal` |
 | `ratio` | `pace / target` |
 | `streak` | consecutive logged days ending today; an empty today does not break it |
 
@@ -548,7 +557,7 @@ r = hours / target
 
 ### 9.5 Empty and edge states
 
-**No sessions:** ETA `—`, pace `0.0`, bar at `0`, sparkline baseline only, subline `No sessions logged yet`; the graph remains. **No pace** (all-time zero in 28 days): ETA `—`, ruler ticks, no dot, hint `no pace yet`. **ETA horizon:** the date is the projected arrival at the *next* unachieved milestone (§21), not at 10,000 h; the ruler therefore measures years to that threshold. **> 10-year ETA:** dot pins right in the "off" style, hint reports exact days. **Completed 10,000h:** bar `100%`, ETA reads `—` with hint `10,000 h reached`, one quiet state change (§13.7). **Future days:** not rendered; do not grey them in.
+**No sessions:** ETA `—`, pace `0.0`, bar at `0`, sparkline baseline only, subline `No sessions logged yet`; the graph remains. **No pace** (all-time zero in 28 days): ETA `—`, ruler ticks, no dot, hint `no pace yet`. **ETA horizon:** the date is the projected arrival at the *next* unachieved milestone (§21) **inside the skill's own horizon**, not at 10,000 h; a microskill therefore projects to its next threshold up to `1,000`. The ruler measures years to that threshold. **> 10-year ETA:** dot pins right in the "off" style, hint reports exact days. **Completed horizon:** bar `100%`, ETA reads `—` with hint `1,000 h reached` or `10,000 h reached`, one quiet state change (§13.7). **Future days:** not rendered; do not grey them in.
 ---
 
 ## 10. Copy
@@ -625,19 +634,19 @@ Bottom center (above mobile nav), `#111` surface, white `11px/300`, radius `999p
 
 ### 13.7 Completion and milestones
 
-At 10,000 hours the page may shift once: subline `10,000 hours · completed Mar 2028`, bar `100%`, ETA tile reading the completion date (§9.5). No confetti, modal, or sound. An acknowledged milestone gets one `550ms` cell-style pulse on the cumulative value and a one-line toast.
+At the skill's horizon — 10,000 hours normally, 1,000 for a microskill — the page may shift once: subline `1,000 h reached`, bar `100%`, ETA reading `—` (§9.5). No confetti, modal, or sound. An acknowledged milestone gets one `550ms` cell-style pulse on the cumulative value and a one-line toast.
 
 ### 13.8 Create-skill flow (concrete)
 
-The rail's add affordance (§6.1) is the only path to a new skill; no second button in the header or canvas.
+The rail's add affordance (§6.1) is the only discovery point for a new skill; no second button in the header or canvas. It has two modes: a plain click creates a 10,000-hour skill, and a modifier click creates a 1,000-hour microskill (§23). The palette action and `⌘⇧N` reach the same micro mode for keyboard users.
 
-1. Modal per §13.5: title `New skill`, subline `A page, a graph, a target.`
+1. Modal per §13.5: title `New skill`, subline `A page, a graph, a target.` Micro mode changes the title to `New microskill` and the subline to `A page, a graph, a thousand hours.`
 2. Name field: borderless `26px/200`, `9px` uppercase label above, `1px #eee` underline → `#111` on focus; focused and selected on open; `Enter` creates. Required; errors `10.5px #c93a3a` below (`Enter a name.`, `That name is already in use.`), never a toast.
 3. Icon picker: 42 `40px` buttons (§6.2) in `repeat(auto-fill, 40px)`, `8px` gaps (`6px` at `≤520px`), `#cbcbcb` rest, `#111` selected with a `1.5px #111` ring, `12px` radius. `book` first and default; six and five columns on narrow screens, the dialog scrolls rather than clips. Typing pre-selects the best match and names it quietly below the field (§13.11).
 4. Hue picker: one `18px` circle per documented hue (§4.2) — four reserved first, then the five in use — in `28px` targets. Selected: `1.5px #111` outer ring, `2px` white gap. Default `45` (ochre).
 5. Target stepper: `− 3 h/day +`, `0.25` steps, `0.25–12`, tabular, disabled at bounds; default `3`.
 6. Footer: ghost `cancel`, primary `create`, `12px` apart. `Esc`, `cancel`, backdrop click close without creating; focus starts in the name, trapped in the panel.
-7. On create: append a skill with an empty log and `createdAt` today (no seeded hours), switch with `viewIn`, focus its rail button, announce `<name> added.` politely. Subline `No sessions logged yet · target 3 h/day`.
+7. On create: append a skill with `goal: 10000 | 1000`, `micro` matching the mode, an empty log, and `createdAt` today (no seeded hours), switch with `viewIn`, focus its rail button, announce `<name> added.` politely. Subline `No sessions logged yet · target 3 h/day` plus `· 1,000 h` in micro mode.
 
 ### 13.9 Empty states
 
@@ -675,6 +684,9 @@ Typing picks the icon. Each of the 42 glyphs carries a lowercase vocabulary (`IC
 | `index.html` | Self-contained prototype: tokens, components, demo data, interactions |
 | `share-card.css` | Hold affordance on the page title (§22) |
 | `share-card.js` | 1080 × 1920 poster composer, download, keyboard fallback (§22) |
+| `store.js` | Local-first persistence: `tenk.v1` envelope, validation, migration, corrupt fallback (§23.6) |
+| `store.test.js` | Node tests for the store contract (`node store.test.js`) |
+| `microskill.css` | Microskill-only marks: rail dot and tooltip, header goal mark, dialog goal badge |
 | `design.md` | This document — canonical visual and behavioural spec |
 | `README.md` | Product premise, philosophy, status, roadmap |
 
@@ -682,14 +694,14 @@ Typing picks the icon. Each of the 42 glyphs carries a lowercase vocabulary (`IC
 
 - Base reset, cell/legend styles; floating surfaces outside the view mount: `.tip`, `.logger`, `.runner`, `.toast`, `.backdrop` / `.dialog`.
 - `.v1` console styles only; Variant 2/3 styles removed (§17).
-- `ICONS`, seeded demo data (`mulberry32`, `genLog`), `stats`, formatters; `graphHTML`, `metricsHTML1`, `view1`, `animateNumbers`, `revealBars`, `render`, `refreshMetrics`.
+- `ICONS`, seeded demo data (`mulberry32`, `genLog`, `seedHabits`), `goalOf`/`milestonesFor`, `stats`, formatters; `graphHTML`, `metricsHTML1`, `view1`, `animateNumbers`, `revealBars`, `render`, `refreshMetrics`. `BOOT` hydrates from `TenkStore` before the first render; `saveState` is the single write path.
 - Surfaces and machines: `openLogger`/`commit`/`closeLogger`, `openDialog`/`createSkill`/`closeDialog`, `openDeleteConfirm`/`deleteSkill`/`closeDeleteConfirm`, `startSession`/`tickSession`/`finishSession`/`discardSession`/`paintSessionCell` (pointer hold: `press`, `cancelArm`), `openPalette`/`paletteResults`/`fuzzyScore`/`runPaletteItem`/`closePalette`, `openKeys`, `ICON_KEYWORDS`/`normName`/`matchIconFor`/`applyIconMatch` and the `icon · …` line, `MILESTONES`/`milestonesHTML`/`refreshMilestones`; one delegated `keydown` map and the polite live region.
 
 ### 15.3 Porting to a component app
 
 - Move §4 tokens into `:root`; no literal hex values in components.
 - Variants 2 and 3 are gone; to revive an archived pattern, import the component only — never the retired shell (§17.4).
-- Replace seeded logs with persisted storage; keep the same derived functions.
+- Seeded logs are demo-only and appear once, on first run; persisted habits use the same derived functions and `goalOf`. Never let a second store own a habit field.
 - Promote the logger to an accessible dialog with a touch focus trap and `aria-label`s.
 - Add hit-area padding at coarse pointers, and a `:focus-visible` underline in the input.
 - Keep count-up semantics: previous → next per habit and metric, `850ms`, cubic ease-out.
@@ -997,13 +1009,13 @@ The console is fully operable without a pointer. Nothing added at rest: `⌘K` /
 | Groups | `9px/400` `.13em` uppercase `#bdbdbd`: **Skills**, then **Actions** |
 | Row | `40px`, radius `8px`, `12.5px/300`; skill rows carry the `17px` line icon (`#cbcbcb`, selected `#111`) |
 | Selected | `#f7f7f7` + a `1.5px #111` inset mark; no hue in the palette chrome |
-| Key hint | `9.5px #dcdcdc`, right-aligned: `N` `T` `L` `S` `D` `?` `1–9` |
+| Key hint | `9.5px #dcdcdc`, right-aligned: `N` `⌘⇧N` `T` `L` `S` `D` `?` `1–9` |
 | Footer | true result count left; `↑↓ navigate · ↵ run · esc` right; both `9.5px #dcdcdc` |
 | Match | fuzzy subsequence — exact prefix > word boundary > subsequence; skills above actions; capped at `24` rows with the true count |
 | Empty | `No matches.` |
 | Nav | `↑`/`↓` wrap, `Home`/`End` jump, `Enter` runs, `Tab` never leaves; hover selects, click runs |
 
-Actions: `New skill…`, `Edit daily target…`, `Log today…`, `Start`/`Stop session`, `Delete <skill>…`, `Keyboard shortcuts`, and `Switch to <skill>` per skill; a `Switch to X` row hides while X already matches under **Skills**. Running a row closes the palette first (focus restored) so dialogs open against the right trigger. `Log today…` falls back to the most recent rendered day if today is missing from the graph, and says so.
+Actions: `New skill…`, `New microskill…`, `Edit daily target…`, `Log today…`, `Start`/`Stop session`, `Delete <skill>…`, `Keyboard shortcuts`, and `Switch to <skill>` per skill; a `Switch to X` row hides while X already matches under **Skills**. `New microskill…` opens the create dialog in micro mode (§23.1); its search terms include `micro`, `microskill`, `1000`, `thousand`, and `shorter horizon`. Running a row closes the palette first (focus restored) so dialogs open against the right trigger. `Log today…` falls back to the most recent rendered day if today is missing from the graph, and says so.
 
 ### 19.2 Shortcut map
 
@@ -1014,6 +1026,7 @@ Actions: `New skill…`, `Edit daily target…`, `Log today…`, `Start`/`Stop s
 | `↑` `↓` / `←` `→` | previous / next skill |
 | `1`–`9` | jump to skill N |
 | `N` | new skill |
+| `⌘⇧N` / `Ctrl+Shift+N` | new microskill (§23.1) |
 | `T` | edit this skill's daily target |
 | `L` | log today |
 | `S` | start / stop the session for today |
@@ -1021,7 +1034,7 @@ Actions: `New skill…`, `Edit daily target…`, `Log today…`, `Start`/`Stop s
 | `Enter` | run the selected palette row / activate the focused control |
 | `Esc` | close the topmost surface |
 
-`←`/`→` is the rail grammar; `↑`/`↓` aliases it. Single-key shortcuts stay silent in `input`, `textarea`, `select`, `[contenteditable]`, and while any surface is open (session bar, logger, target editor, dialog, palette); exception: `S` ends a session while the bar is focused. `Esc` belongs to the open surface. Modifier combinations pass through.
+`←`/`→` is the rail grammar; `↑`/`↓` aliases it. Single-key shortcuts stay silent in `input`, `textarea`, `select`, `[contenteditable]`, and while any surface is open (session bar, logger, target editor, dialog, palette); exception: `S` ends a session while the bar is focused. `Esc` belongs to the open surface. The console claims only its documented combinations; other modifier combinations pass through. On macOS the browser may reserve `⌘⇧N` for a new incognito window, so `New microskill…` in the palette is the guaranteed keyboard path.
 
 ### 19.3 Shortcuts cheatsheet
 
@@ -1094,6 +1107,8 @@ Eleven fixed thresholds, one card each, in a row that scrolls sideways below the
 
 Ascending, one card per value, order fixed: `1 · 10 · 25 · 50 · 100 · 250 · 500 · 1,000 · 2,500 · 5,000 · 10,000` hours.
 
+The list is filtered to the skill's horizon: `milestonesFor(h)` keeps every threshold `≤ goalOf(h)`. A 10,000-hour skill renders all eleven; a microskill (§23) renders the first eight and its row is titled and counted `achieved / 8`. The last visible card is the summit, whatever the horizon.
+
 | Hours | Caption | Hours | Caption |
 | --- | --- | --- | --- |
 | `1` | first hour | `250` | committed |
@@ -1103,7 +1118,7 @@ Ascending, one card per value, order fixed: `1 · 10 · 25 · 50 · 100 · 250 �
 | `100` | a hundred | `5,000` | a discipline |
 | | | `10,000` | the mark |
 
-Captions are engraved, terse, fixed — never a count or date. `10,000` is the summit: the only card with a distinct (double) rim and the deepest foil.
+Captions are engraved, terse, fixed — never a count or date. The last visible card is the summit: the only card with a distinct (double) rim and the deepest foil. For a microskill the `1,000` card takes that role and keeps its `a thousand` caption.
 
 ### 21.2 States
 
@@ -1113,7 +1128,7 @@ Captions are engraved, terse, fixed — never a count or date. `10,000` is the s
 | **next** | the lowest threshold not yet reached | grey, but resolved: brighter foil, a live progress hairline at `total / threshold` in the skill hue, no gold |
 | **locked** | every other unachieved card | grey foil at `~50%` opacity, hairline border, no specular, no progress |
 
-Exactly one card is `next`; `achieved → next → locked`, computed per render from `stats(h).total`. The section head's count reads `achieved / 11`. `next` is the only card carrying colour, and it is data ink (§4): `hsl(var(--hue),55%,52%)`.
+Exactly one card is `next`; `achieved → next → locked`, computed per render from `stats(h).total` against the filtered list. The section head's count reads `achieved / visible`, so `achieved / 11` normally and `achieved / 8` for a microskill. `next` is the only card carrying colour, and it is data ink (§4): `hsl(var(--hue),55%,52%)`.
 
 ### 21.3 The strip
 
@@ -1218,3 +1233,173 @@ After download: `showToast('Share card saved · Piano')` and a polite live-regio
 `prefers-reduced-motion` keeps the hold and its progress meter but removes the flourish: no transition on the track, no completion flash. The card itself is always a still image.
 
 **What not to add.** A screenshot of the console, browser chrome, URLs or QR codes, a Web Share dependency, a file picker, confetti or sound, all-skill recaps, an animated poster, an ETA to 10,000 when the next threshold is nearer, gold outside the milestone discs, or a second accent.
+---
+
+## 23. Microskills — a shorter horizon
+
+Some practices are not aimed at ten thousand hours. A page, a graph, and a thousand hours is still a
+serious instrument — the same console, the same cells, the same pace. A **microskill** is a skill whose
+horizon is `1,000` hours instead of `10,000`. It is not a second product, a smaller page, or a lighter
+version: every derived number reads the skill's own goal, so the page tells the truth at either scale.
+
+### 23.1 Trigger
+
+| Path | Result |
+| --- | --- |
+| Click `.rail-add` | `New skill` — `goal: 10000` |
+| `⌘`-click (macOS) / `Ctrl`-click (Windows, Linux) `.rail-add` | `New microskill` — `goal: 1000`, `micro: true` |
+| `⌘⇧N` / `Ctrl+Shift+N` | `New microskill` |
+| Palette → `New microskill…` | `New microskill` |
+| `N`, or a plain `Enter` in the dialog | `New skill` |
+
+The modifier is read **at click time** from the actual event: `event.metaKey || event.ctrlKey`. There is
+no sticky mode, no last-used preference, and no keydown listener that changes what the next click will
+do. Closing the dialog resets the mode; the next plain click is a normal skill again.
+
+On macOS a `Ctrl`-click is delivered as a `contextmenu` event, not a `click`. The delegated
+`contextmenu` listener therefore checks for `.rail-add` **and** `ctrlKey` first, prevents the native
+menu, and opens the micro dialog. Right-clicking a rail skill, and every other Ctrl-click, keeps the
+existing delete-confirm behaviour. A hover or focus tooltip on the plus states the affordance quietly:
+`⌘ click · microskill` (or `Ctrl click · microskill`), one line, only while the button is engaged.
+
+The keyboard path is the palette action; the shortcut is a convenience. macOS browsers may reserve
+`⌘⇧N` for a new incognito window, in which case the palette action is the guaranteed route. The
+shortcut stays silent while a dialog, palette, cheatsheet, logger, or target editor is open, so it can
+never replace a typed value; it is part of the same guarded `keydown` map as §19.
+
+### 23.2 Horizon semantics
+
+`goalOf(h) = h.goal || 10000` is the single read path. `goal` drives the data; `micro` drives only the
+presentation. A stored `micro: true` without a goal migrates to `1000`; a missing goal without the flag
+migrates to `10000`. Neither field is ever inferred from the skill's name or daily target.
+
+`stats(h)` keeps its shape and gains two fields:
+
+| Field | Meaning |
+| --- | --- |
+| `skillGoal` | `goalOf(h)` — `1000` or `10000` |
+| `complete` | `total >= skillGoal` |
+| `remaining` | `max(0, skillGoal − total)` |
+| `nextMs` | lowest threshold **inside the horizon** not yet reached, or `null` |
+| `goal` | `nextMs ?? skillGoal` — the ETA target, preserving next-milestone semantics |
+| `eta` / `etaDays` | projection to `nextMs`; `null` / `∞` at the horizon or with no pace |
+
+Everything downstream follows:
+
+- **Cumulative** — `min(100, total / (skillGoal / 100))`. Two hours is the same felt distance on a
+  `1,000`-hour page as twenty are on a `10,000`-hour page; the bar itself is unchanged.
+- **ETA** — still answers "when is the next milestone?", never "when is the horizon?". It projects to
+  `nextMs`, reports `no pace yet` when pace is zero, and at the horizon reads `—` with the hint
+  `1,000 h reached` / `10,000 h reached`. It never renders a countdown, `0 days`, or a percentage.
+- **Milestones** — `milestonesFor(h)` filters the fixed threshold list to `≤ goalOf(h)`. A microskill
+  shows `1 · 10 · 25 · 50 · 100 · 250 · 500 · 1,000` (eight cards); a 10,000-hour skill shows eleven.
+  The count reads `achieved / visible`, and the last visible card is the summit with the double rim —
+  `1,000` for a microskill. Captions never change.
+- **Pace, levels, graph, target, streak** — untouched. A microskill is not a different unit of work;
+  it is the same work with a nearer horizon.
+
+### 23.3 Rail indicator
+
+Microskills are not a separate rail group. Each micro rail button keeps its icon and adds one mark:
+
+| Property | Spec |
+| --- | --- |
+| Mark | `3 × 3px` dot, `border-radius:50%`, bottom-right inset `6px` (`8px` at ≤860px) |
+| Colour | the skill's own hue, `hsl(var(--h),55%,52%)` — data ink, never the interface accent |
+| Rest | no ring, no badge, no label, no different icon size |
+| Tooltip | `microskill · 1,000 h`, `10.5px/300`, ink background, white text, `5px 9px`, radius `6px`, `12px` right of the button |
+| Reveal | hover **or** `:focus-visible`, `140ms` opacity with a `4px` settle; hidden from assistive tech (`aria-hidden`) |
+| Accessible name | `<name>, microskill, 1,000 hours` — the tooltip is decoration, not the label |
+
+Micro rail buttons deliberately omit the native `title` attribute: the custom tooltip carries the same
+fact without a second, delayed browser tooltip. Normal skills keep `title` and gain no dot. The active
+marker (`::before`), hover fill, and press scale are unchanged.
+
+### 23.4 Create dialog
+
+Micro mode is a class on the existing dialog — `.dialog.is-micro` — not a second modal.
+
+| Element | Spec |
+| --- | --- |
+| Title | `New microskill` (normal: `New skill`) |
+| Subline | `A page, a graph, a thousand hours.` (normal: `A page, a graph, a target.`) |
+| Goal badge | opposite the title in a flex `.dlg-head`, `20 × 20px` ring + `1,000 h` label |
+| Ring | `1.4px` track `#f1f1f1`; `1.4px` arc in ink `#101010`, one tenth-turn, `5.027 / 50.265` dash |
+| Label | `10px/300`, `#b8b8b8`; `1,000` at `400`, ink; tabular numerals |
+| Entry | opacity `0 → 1` with `translateY(-2px) → 0`, `280ms` ease-out; reduced motion instant |
+| Reset | closing removes `.is-micro`, hides the badge, restores title/subline; all other fields unchanged |
+
+The badge is the only new material in the dialog: no gold, no hue, no gradient, no extra field. The
+name, 42-icon picker, hue picker, and target stepper are identical in both modes. `create` writes
+`goal: 1000, micro: true` in micro mode and `goal: 10000, micro: false` otherwise.
+
+### 23.5 Header goal mark
+
+The subline may carry the horizon after the editable target: `· 1,000 h`, with a `3px` hue dot and a
+hover title `microskill · 1,000 h`. It is inline text, not a badge, and never part of `<h1>`. Normal
+skills show no mark, so the default header remains exactly as specified in §3. The mark's accessible
+label says `microskill, 1,000 hour goal`; the visible text stays quiet.
+
+### 23.6 Persistence
+
+All skills — normal and micro — live under one local-first key. The store is `store.js`; `index.html`
+hydrates from it **before the first render**.
+
+```json
+{
+  "version": 1,
+  "hi": 0,
+  "habits": [
+    {
+      "name": "Piano",
+      "hue": 268,
+      "target": 3,
+      "icon": "piano",
+      "goal": 10000,
+      "micro": false,
+      "createdAt": "2025-01-02",
+      "log": { "2025-01-02": 1.5 }
+    }
+  ]
+}
+```
+
+| Rule | Behaviour |
+| --- | --- |
+| Key | `tenk.v1`; backups at `tenk.v1.backup`; theme stays at `tenk.theme`, untouched |
+| Version | `version: 1`; another version is treated as unreadable, not silently migrated |
+| Hydrate | `TenkStore.load()` → `{status: ok \| empty \| invalid \| unavailable}`; `ok` supplies habits and `hi` |
+| Seed | only when the key is absent; the deterministic demo is generated once and written back |
+| Corrupt | the raw payload is copied to `tenk.v1.backup`, then the demo is reseeded; the page never throws |
+| Validate | names trimmed to `40`; hue `0–360`; target `0.25–12`; goal positive; `createdAt` a local day key |
+| Logs | only `YYYY-MM-DD` keys with finite `> 0` values; minute precision; a day clamped to `24`; `0` deletes the key |
+| Migration | missing `goal` → `10000`; `micro: true` without a goal → `1000`; missing `createdAt` → today |
+| Save | after create, delete, log/clear, target change, session finish, and skill selection |
+| Timing | mutations debounce `80ms`; create/delete write immediately; `pagehide` flushes the current state |
+| Storage guard | every read and write is wrapped; absent, blocked, quota-full, or `file://` storage returns safely |
+
+A running stopwatch is still not persisted; it is written only when logged or discarded (§18, roadmap).
+There is no cross-tab merge: the last write wins, and the page is not a collaborative document.
+
+### 23.7 Accessibility, copy, reduced motion
+
+- The rail's accessible name is the complete fact — `<name>, microskill, 1,000 hours`; the 3px dot is
+  decorative. The custom tooltip is `aria-hidden` and appears on keyboard focus as well as hover.
+- The plus keeps `aria-label="Add skill"` and gains `aria-keyshortcuts="Meta+Shift+N Control+Shift+N"`;
+  the palette action and shortcut mean the modifier gesture is never the only route.
+- The dialog remains `role="dialog"`, `aria-modal="true"`, labelled by its title; the goal badge is
+  static text and is not announced as a control. Focus still starts in the name field and returns to
+  the rail button after creation.
+- Copy uses **microskill** as one word, lowercase in running text, capitalised only in the dialog title.
+  The horizon is always formatted with a thousands separator: `1,000 h`.
+- `prefers-reduced-motion`: the dot is static, the badge appears without transform, the tooltip appears
+  without settle. No other motion is added. Gold remains confined to §21; the micro mark is hue data ink
+  only.
+
+### 23.8 What not to add
+
+A sticky modifier or "last used mode"; a separate micro page, route, or storage key; a second accent,
+badge, or icon family; a ring or progress arc in the rail; a special graph, cell style, or level scale; a
+countdown, percentage, or "hours to go"; gold outside the milestone row; auto-promoting a skill to
+micro because its target is small; or an in-dialog horizon slider. The horizon is chosen once, at
+creation, and everything else stays the same instrument.
