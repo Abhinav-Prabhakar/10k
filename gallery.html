@@ -12,6 +12,10 @@
     box-sizing: border-box;
   }
 
+  :root {
+    --ease-out: cubic-bezier(.2, .8, .2, 1);
+  }
+
   html,
   body {
     margin: 0;
@@ -19,7 +23,7 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: #000000;
+    background: var(--bg, #000);
     overscroll-behavior: none;
   }
 
@@ -37,6 +41,18 @@
     padding: 0;
   }
 
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .gallery {
     position: relative;
     width: 100%;
@@ -50,7 +66,7 @@
     -webkit-user-select: none;
     user-select: none;
     cursor: grab;
-    background: #000000;
+    background: var(--bg, #000);
   }
 
   .gallery.is-dragging {
@@ -73,14 +89,18 @@
     transform: translate3d(20px, 20px, 0);
   }
 
+  .grid.is-panning {
+    transition: transform .45s var(--ease-out);
+  }
+
   .tile {
     position: relative;
     width: 200px;
     height: 200px;
     overflow: hidden;
     border-radius: 15px;
-    background-color: #1a1a1f;
-    color: rgba(255, 255, 255, 0.85);
+    background-color: var(--surface, #1a1a1f);
+    color: var(--ink, #fff);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -88,6 +108,12 @@
     cursor: pointer;
     -webkit-user-select: none;
     user-select: none;
+    animation: tileIn .72s var(--ease-out) backwards;
+    animation-delay: var(--d, 0ms);
+  }
+
+  .tile[data-supported="false"] {
+    cursor: default;
   }
 
   .gallery.is-dragging .tile {
@@ -105,14 +131,286 @@
     user-select: none;
     -webkit-user-drag: none;
     z-index: 1;
+    transition: transform .65s var(--ease-out), opacity .35s ease, filter .35s ease;
+  }
+
+  /* Unsupported: the photography stays as a quiet preview, but loses its colour. */
+  .tile[data-supported="false"] img {
+    filter: grayscale(1) contrast(.92) brightness(.82);
+    opacity: .45;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .tile[data-supported="true"]:hover img {
+      transform: scale(1.035);
+    }
+    .tile[data-supported="false"]:hover img {
+      opacity: .6;
+    }
+  }
+
+  /* Names live on approach, never on the resting grid. */
+  .tile-meta {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 38px 14px 13px;
+    background: linear-gradient(
+      to top,
+      rgba(0, 0, 0, .72),
+      rgba(0, 0, 0, .24) 48%,
+      transparent 78%
+    );
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity .28s var(--ease-out), transform .28s var(--ease-out);
+    pointer-events: none;
+  }
+
+  .tile:hover .tile-meta,
+  .tile:focus-visible .tile-meta {
+    opacity: 1;
+    transform: none;
+  }
+
+  .tile-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 300;
+    letter-spacing: -.01em;
+    line-height: 1.1;
+    color: var(--ink, #fff);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, .5);
+  }
+
+  .tile-open {
+    flex: 0 0 auto;
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    border: 1px solid var(--line, rgba(255, 255, 255, .14));
+    display: grid;
+    place-items: center;
+    color: var(--ink, #fff);
+    background: rgba(0, 0, 0, .18);
+    transition: background .2s ease, border-color .2s ease;
+  }
+
+  .tile-open svg {
+    width: 11px;
+    height: 11px;
+  }
+
+  .tile[data-supported="true"]:hover .tile-open {
+    background: var(--ink, #fff);
+    border-color: var(--ink, #fff);
+    color: #000;
+  }
+
+  .tile-soon {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding-bottom: 5px;
+    font-size: 8px;
+    font-weight: 400;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-soft, rgba(255, 255, 255, .6));
+  }
+
+  .tile-soon::before {
+    content: '';
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .tile[data-supported="false"] .tile-name {
+    color: var(--ink-soft, rgba(255, 255, 255, .6));
+  }
+
+  .tile:focus-visible {
+    outline: 2px solid var(--ink, #fff);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 6px rgba(0, 0, 0, .55);
+  }
+
+  .gallery.is-dragging .tile img {
+    transform: none;
+  }
+
+  .gallery.is-dragging .tile-meta {
+    opacity: 0;
+  }
+
+  /* The field is infinite: the grid dissolves before it reaches an edge. */
+  .veil {
+    position: fixed;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background:
+      linear-gradient(to bottom, rgba(0, 0, 0, .32), transparent 13%, transparent 87%, rgba(0, 0, 0, .32)),
+      radial-gradient(125% 105% at 50% 48%, transparent 38%, rgba(0, 0, 0, .28) 72%, rgba(0, 0, 0, .66) 100%);
+  }
+
+  /* Chrome — one hairline pill each, quiet until approached. */
+  .home-link,
+  .hint {
+    position: fixed;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    height: 33px;
+    padding: 0 13px 0 10px;
+    border: 1px solid var(--line, rgba(255, 255, 255, .14));
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .42);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    color: var(--ink-soft, rgba(255, 255, 255, .6));
+    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 300;
+    letter-spacing: .04em;
+    line-height: 1;
+    text-decoration: none;
+    transition: color .2s ease, background .2s ease, border-color .2s ease, opacity .35s ease, transform .35s var(--ease-out);
+  }
+
+  .home-link {
+    top: 18px;
+    left: 18px;
+    animation: chromeIn .55s var(--ease-out) .42s backwards;
+  }
+
+  .home-link svg,
+  .hint svg {
+    width: 12px;
+    height: 12px;
+    flex: 0 0 auto;
+    opacity: .8;
+  }
+
+  .home-link:hover,
+  .home-link:focus-visible {
+    color: var(--ink, #fff);
+    border-color: rgba(255, 255, 255, .32);
+    background: rgba(0, 0, 0, .64);
+  }
+
+  .home-link:focus-visible {
+    outline: 2px solid var(--ink, #fff);
+    outline-offset: 3px;
+  }
+
+  .hint {
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    gap: 7px;
+    padding: 0 14px;
+    font-size: 9.5px;
+    color: var(--ink-soft, rgba(255, 255, 255, .6));
+    background: rgba(0, 0, 0, .34);
+    animation: hintIn .55s var(--ease-out) .72s backwards;
+  }
+
+  .hint i {
+    font-style: normal;
+    color: rgba(255, 255, 255, .28);
+    margin: 0 2px;
+  }
+
+  .hint.is-off {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+    pointer-events: none;
+  }
+
+  @keyframes tileIn {
+    from { opacity: 0; transform: scale(.975) translateY(6px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @keyframes chromeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @keyframes hintIn {
+    from { opacity: 0; transform: translate(-50%, 6px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+  }
+
+  @media (max-width: 640px) {
+    .home-link {
+      top: 14px;
+      left: 14px;
+    }
+    .hint {
+      bottom: 14px;
+      max-width: calc(100vw - 28px);
+      white-space: nowrap;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile,
+    .home-link,
+    .hint {
+      animation: none;
+    }
+    .tile img,
+    .tile-meta,
+    .home-link,
+    .hint {
+      transition: none;
+    }
+    .grid.is-panning {
+      transition: none;
+    }
+    .tile[data-supported="true"]:hover img {
+      transform: none;
+    }
   }
 </style>
 </head>
 <body>
 <main>
-  <div class="gallery" id="gallery">
+  <h1 class="sr-only">Hobby gallery</h1>
+  <a class="home-link" href="index.html" aria-label="Back to the 10,000 Hours console">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+      <path d="M14.5 6L8.5 12l6 6"/>
+    </svg>
+    <span>home</span>
+  </a>
+  <div class="gallery" id="gallery" role="group" aria-label="Hobby gallery">
     <div class="grid" id="grid"></div>
   </div>
+  <div class="veil" aria-hidden="true"></div>
+  <p class="hint" id="hint" aria-hidden="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 4v16M4 12h16M9 7l3-3 3 3M9 17l3 3 3-3M7 9l-3 3 3 3M17 9l3 3-3 3"/>
+    </svg>
+    <span>drag to explore</span>
+    <i>·</i>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5.5 3.5l5.2 15 2.2-6.1 6.1-2.2z"/>
+    </svg>
+    <span>click to open</span>
+  </p>
 </main>
 <script>
 (function () {
@@ -144,6 +442,62 @@
     { src: "images/martial-arts.png", alt: "Martial Arts" },
     { src: "images/running.jpg", alt: "Running" }
   ];
+
+  /* ------------------------------------------------------------------ */
+  /* Hobby → skill — the one table to edit when new images arrive.      */
+  /*                                                                    */
+  /* A tile is live only when its hobby resolves to a skill the console */
+  /* actually has. Add a row per new image, e.g. `Guitar: "Guitar"`.    */
+  /* Painting is the image for Drawing; Coding the image for            */
+  /* Programming. A saved skill whose name matches a hobby wins first,  */
+  /* so a user-created "Chess" lights the Chess tile automatically.     */
+  /* There is no Japanese image yet; add the row with the image.        */
+  /* ------------------------------------------------------------------ */
+
+  var SKILL_BY_HOBBY = {
+    Piano: "Piano",
+    Painting: "Drawing",
+    Coding: "Programming",
+    Running: "Running"
+  };
+
+  var STORAGE_KEY = "tenk.v1";
+  var DEFAULT_SKILLS = ["Piano", "Drawing", "Programming", "Running", "Japanese"];
+
+  /* Read the saved skill set without trusting it. Absent, corrupt, or   */
+  /* empty storage falls back to the five defaults. Never write here.    */
+  function readSkillNames() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return DEFAULT_SKILLS.slice();
+      var data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.habits)) return DEFAULT_SKILLS.slice();
+      var names = data.habits
+        .map(function (habit) {
+          return habit && typeof habit.name === "string" ? habit.name.trim() : "";
+        })
+        .filter(Boolean);
+      return names.length ? names : DEFAULT_SKILLS.slice();
+    } catch (err) {
+      return DEFAULT_SKILLS.slice();
+    }
+  }
+
+  /* Exact hobby-name match wins; otherwise the documented mapping must  */
+  /* name a skill that exists. Returns the skill's stored casing.         */
+  function skillFor(item, names) {
+    var hobby = item.alt.toLowerCase();
+    var i;
+    for (i = 0; i < names.length; i++) {
+      if (names[i].toLowerCase() === hobby) return names[i];
+    }
+    var mapped = SKILL_BY_HOBBY[item.alt];
+    if (!mapped) return null;
+    for (i = 0; i < names.length; i++) {
+      if (names[i].toLowerCase() === mapped.toLowerCase()) return names[i];
+    }
+    return null;
+  }
 
   /* ------------------------------------------------------------------ */
   /* Deterministic layout — verbatim port of DraggableGrid.tsx.          */
@@ -305,22 +659,48 @@
   var MAX_SPEED = 5000;          // px/s sanity cap on flick velocity
   var VELOCITY_WINDOW = 100;     // ms of pointer history used for velocity
 
+  var ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg>';
+
   var gallery = document.getElementById("gallery");
   var gridEl = document.getElementById("grid");
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ------------------------------------------------------------------ */
   /* Build the 225 tiles                                                 */
   /* ------------------------------------------------------------------ */
 
+  var skillNames = readSkillNames();
   var displayItems = distribute2DGrid(ITEMS, COLUMNS, ROWS, SEED);
 
   var frag = document.createDocumentFragment();
   for (var index = 0; index < displayItems.length; index++) {
     var item = displayItems[index];
+    var skill = skillFor(item, skillNames);
+    var supported = !!skill;
 
     var tile = document.createElement("div");
     tile.className = "tile";
     tile.style.borderRadius = RADIUS + "px";
+    tile.dataset.hobby = item.alt;
+    tile.dataset.supported = supported ? "true" : "false";
+    tile.setAttribute("role", "link");
+
+    /* The staggered arrival reads as one calm field, not 225 separate pops. */
+    var row = Math.floor(index / COLUMNS);
+    var col = index % COLUMNS;
+    tile.style.setProperty("--d", ((row + col) * 13) + "ms");
+
+    if (supported) {
+      var href = "index.html?skill=" + encodeURIComponent(skill);
+      tile.dataset.skill = skill;
+      tile.dataset.href = href;
+      tile.tabIndex = 0;
+      tile.setAttribute("aria-label", "Open " + skill);
+    } else {
+      tile.tabIndex = -1;
+      tile.setAttribute("aria-disabled", "true");
+      tile.setAttribute("aria-label", item.alt + " — coming soon");
+    }
 
     var img = document.createElement("img");
     img.src = item.src;
@@ -334,9 +714,81 @@
     });
     tile.appendChild(img);
 
+    var meta = document.createElement("div");
+    meta.className = "tile-meta";
+    meta.setAttribute("aria-hidden", "true");
+
+    var name = document.createElement("span");
+    name.className = "tile-name";
+    name.textContent = item.alt;
+    meta.appendChild(name);
+
+    if (supported) {
+      var open = document.createElement("span");
+      open.className = "tile-open";
+      open.innerHTML = ARROW;
+      meta.appendChild(open);
+    } else {
+      var soon = document.createElement("span");
+      soon.className = "tile-soon";
+      soon.textContent = "soon";
+      meta.appendChild(soon);
+    }
+
+    tile.appendChild(meta);
     frag.appendChild(tile);
   }
   gridEl.appendChild(frag);
+
+  /* ------------------------------------------------------------------ */
+  /* Opening a tile                                                      */
+  /* ------------------------------------------------------------------ */
+
+  var dragging = false;
+
+  function activateTile(tile) {
+    if (!tile || dragging) return;
+    if (tile.dataset.supported !== "true") return;
+    var href = tile.dataset.href;
+    if (!href) return;
+    retireHint();
+    window.location.href = href;
+  }
+
+  /* Keyboard focus may land on a tile the viewport has not reached yet.
+     Pan the field to it; pointer drags never wait for this. */
+  var panTimer = 0;
+
+  function bringIntoView(tile) {
+    var rect = tile.getBoundingClientRect();
+    var margin = 64;
+    var dx = rect.left < margin ? margin - rect.left
+      : (rect.right > innerWidth - margin ? innerWidth - margin - rect.right : 0);
+    var dy = rect.top < margin ? margin - rect.top
+      : (rect.bottom > innerHeight - margin ? innerHeight - margin - rect.bottom : 0);
+    if (!dx && !dy) return;
+
+    x = clamp(x + dx, bounds.minX, bounds.maxX);
+    y = clamp(y + dy, bounds.minY, bounds.maxY);
+    gridEl.classList.add("is-panning");
+    applyTransform();
+    clearTimeout(panTimer);
+    panTimer = window.setTimeout(function () {
+      gridEl.classList.remove("is-panning");
+    }, 500);
+  }
+
+  gridEl.addEventListener("focusin", function (event) {
+    var target = event.target;
+    var tile = target && target.closest ? target.closest(".tile") : null;
+    if (!tile) return;
+    retireHint();
+    requestAnimationFrame(function () {
+      if (document.activeElement === tile && tile.matches(":focus-visible")) {
+        bringIntoView(tile);
+      }
+    });
+  });
 
   /* ------------------------------------------------------------------ */
   /* Position + constraints                                              */
@@ -400,7 +852,6 @@
   /* ------------------------------------------------------------------ */
 
   var pointer = null;       // active pointer session
-  var dragging = false;
   var rafId = 0;
   var lastFrameTime = 0;
 
@@ -511,9 +962,13 @@
     if (pointer) return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
 
+    retireHint();
     stopMomentum();
+    gridEl.classList.remove("is-panning");
+    clearTimeout(panTimer);
 
     var now = performance.now();
+    var target = event.target;
     pointer = {
       id: event.pointerId,
       startX: event.clientX,
@@ -521,6 +976,7 @@
       originX: x,
       originY: y,
       moved: false,
+      tile: target && target.closest ? target.closest(".tile") : null,
       samples: [{ x: event.clientX, y: event.clientY, t: now }]
     };
 
@@ -566,8 +1022,9 @@
     }
 
     if (!session.moved) {
-      // Press moved < 5px → onItemClick (undefined on this page): no-op.
+      // Press moved < 5px → a click, not a drag. A drag never navigates.
       setDragging(false);
+      if (!cancelled) activateTile(session.tile);
       return;
     }
 
@@ -609,6 +1066,34 @@
   gallery.addEventListener("dragstart", function (event) {
     event.preventDefault();
   });
+
+  /* ------------------------------------------------------------------ */
+  /* Keyboard — Enter/Space opens a supported tile, never a drag.        */
+  /* ------------------------------------------------------------------ */
+
+  gridEl.addEventListener("keydown", function (event) {
+    if (event.key !== "Enter" && event.key !== " " && event.key !== "Spacebar") return;
+    var target = event.target;
+    var tile = target && target.closest ? target.closest(".tile") : null;
+    if (!tile || tile.dataset.supported !== "true") return;
+    event.preventDefault();
+    activateTile(tile);
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* Hint — retires after the first interaction, never a banner.         */
+  /* ------------------------------------------------------------------ */
+
+  var hint = document.getElementById("hint");
+  var hintTimer = 0;
+
+  function retireHint() {
+    if (!hint || hint.classList.contains("is-off")) return;
+    hint.classList.add("is-off");
+    hintTimer = window.setTimeout(function () {
+      hint.hidden = true;
+    }, reduceMotion ? 0 : 420);
+  }
 })();
 </script>
 </body>
