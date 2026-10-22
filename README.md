@@ -181,12 +181,23 @@ The console is fully drivable from the keyboard, and the palette is the front do
 opens a command palette: type to fuzzy-find a skill or an action — `New skill…`, `New microskill…`,
 `Edit daily target…`, `Log today…`, start or stop the session, `Delete…`, `Keyboard shortcuts`,
 `Switch to…` — then arrow to it and press `Enter`. `?` opens the shortcut cheatsheet; `⌘⇧N`
-(or `Ctrl+Shift+N`) opens a new microskill, `1`–`9` jump straight to a skill, `↑`/`↓` (or the rail's
-`←`/`→`) move between them, and `N`, `T`, `L`, `S`, `D` reach new-skill, retarget, log-today, the
-stopwatch, and delete. Single keys stay quiet while you are typing or while a surface is open, and
-`Esc` always closes the topmost one. The console claims only its own combinations; every other browser
-shortcut is left alone. (`⌘⇧N` is the one exception on macOS, where the browser also uses it for a new
-incognito window — the palette's `New microskill…` is the fallback if the browser wins.)
+(or `Ctrl+Shift+N`) opens a new microskill, `⌘⇧L` (`Ctrl+Shift+L`) cycles the theme, `1`–`9` jump
+straight to a skill, `↑`/`↓` (or the rail's `←`/`→`) move between them, and `N`, `T`, `L`, `S`, `D`
+reach new-skill, retarget, log-today, the stopwatch, and delete. Single keys stay quiet while you are
+typing or while a surface is open, and `Esc` always closes the topmost one. The console claims only its
+own combinations; every other browser shortcut is left alone. (`⌘⇧N` is the one exception on macOS,
+where the browser also uses it for a new incognito window — the palette's `New microskill…` is the
+fallback if the browser wins.)
+
+### Theme
+
+The page opens in `auto`, following the system's light or dark preference. `⌘⇧L` / `Ctrl+Shift+L`, or
+the quiet glyph at the end of the header legend, cycles `auto → light → dark → auto`; the gallery has
+the same control at its bottom-right. The choice is remembered in `tenk.theme` and survives a reload.
+A theme change is a `480ms` circular reveal from the control, or a `380ms` colour crossfade where View
+Transitions are unavailable; both respect `prefers-reduced-motion`. Dark is the same instrument after
+dark — hairlines, no cards, one skill hue on data ink, gold only on the milestone row. The full token
+table lives in [`design.md` §25](./design.md#25-theming--auto-light-dark).
 
 ---
 
@@ -230,6 +241,7 @@ The short version:
 - Metric tiles separated by hairlines; a 1px black rule sweeps in on hover.
 - Detail revealed on hover, never required for comprehension.
 - Single easing curve: `cubic-bezier(.2,.8,.2,1)`.
+- Light, dark, and system-following themes from one token set; dark keeps every hairline and adds no cards.
 
 ---
 
@@ -243,13 +255,15 @@ This repository currently holds a **design prototype**, not a finished app.
   the logger, the target slider, the press-and-hold stopwatch, the press-drag swipe that sets a day's
   hours, gesture-only skill deletion, microskills, and the `⌘K` command palette with its shortcut
   layer. Variants 2 and 3 have been removed. The header's `gallery` control opens the visual index;
-  `?skill=<name>` deep-links into a skill.
+  `?skill=<name>` deep-links into a skill. The theme layer lives outside the page in
+  [`theme.css`](./theme.css) and [`theme.js`](./theme.js), loaded by both HTML files.
 - Data is **local-first**. On first run [`store.js`](./store.js) seeds the deterministic demo once and
   writes it to `localStorage` under `tenk.v1`; from then on, skills, logs, targets, the active skill,
   and each skill's horizon survive a reload. A corrupt payload is backed up under `tenk.v1.backup` and
   the demo is reseeded rather than the page failing. The store never throws when storage is missing or
   blocked (including some `file://` contexts). A running stopwatch still does not survive a reload —
-  it is written only when the session is logged or discarded.
+  it is written only when the session is logged or discarded. The theme preference is persisted
+  separately, in `tenk.theme`.
 - [`store.js`](./store.js) — the dependency-free persistence module (versioned envelope, validation,
   migration, corrupt-payload fallback). [`store.test.js`](./store.test.js) exercises the contract in
   Node. [`microskill.css`](./microskill.css) holds the microskill-only rail, header, and dialog marks.
@@ -268,13 +282,37 @@ Open `index.html` in a browser. That's it.
 open index.html
 ```
 
-Persistence uses `localStorage`. Some browsers restrict it on `file://` origins; if you want the full
-local-first behaviour (and the Node store tests), serve the directory:
+Persistence and theme both use `localStorage`. Some browsers restrict it on `file://` origins; if you
+want the full local-first behaviour (and the Node store tests), serve the directory:
 
 ```
 python3 -m http.server 8899
 node store.test.js
 ```
+
+The theme still works from `file://`, though a restricted origin makes the choice last only for the
+session.
+
+### Hosting
+
+The site is served by **GitHub Pages from the `main` branch, root folder**:
+
+**<https://abhinav-prabhakar.github.io/10k/>**
+
+There is no build step and nothing to compile: Pages serves `index.html`, `gallery.html`, `design.md`,
+`reference.html`, `images/`, `theme.css`, and `theme.js` as they are. The empty [`.nojekyll`](./.nojekyll)
+file keeps Pages from running the files through Jekyll, so the underscore-free paths and assets are
+served verbatim.
+
+Deployment is just a push to `main` — no GitHub Actions, no deployment checks, no environment secrets.
+Vercel is retired for this project; there is no `vercel.json`, `CNAME`, or workflow file to maintain.
+The page is a static prototype, so there is no server, database, or API to configure.
+
+### Previewing a theme
+
+For screenshots and design review, `?theme=light`, `?theme=dark`, or `?theme=auto` overrides the saved
+preference for that load without persisting it. Any click on the theme control (or the shortcut) clears
+the override and stores a real preference.
 
 ---
 
@@ -314,8 +352,11 @@ gamified badges, AI coaching. The product's value is its quietness.
 ├── store.test.js   # Node tests for the persistence contract
 ├── microskill.css  # microskill-only rail, header, and dialog marks
 ├── gallery.html    # draggable 225-photo hobby index; supported tiles deep-link into the console (§24)
+├── theme.css       # theme tokens, dark overrides, control, transition, gallery paper mode (§25)
+├── theme.js        # theme engine: auto/light/dark, shortcut, circular reveal (§25)
 ├── images/         # 20 hobby images used by gallery.html
-├── design.md       # design system: tokens, motion, semantics, §17 archive, §18 live session, §20 swipe, §21 milestones, §22 share card, §23 microskills, §24 gallery
+├── .nojekyll       # serve the site verbatim on GitHub Pages
+├── design.md       # design system: tokens, motion, semantics, §17 archive, §18 live session, §20 swipe, §21 milestones, §22 share card, §23 microskills, §24 gallery, §25 theming
 ├── reference.html
 └── README.md       # this file
 ```

@@ -688,12 +688,16 @@ Typing picks the icon. Each of the 42 glyphs carries a lowercase vocabulary (`IC
 | `store.test.js` | Node tests for the store contract (`node store.test.js`) |
 | `microskill.css` | Microskill-only marks: rail dot and tooltip, header goal mark, dialog goal badge |
 | `gallery.html` | Standalone image-led index of hobbies; supported tiles deep-link into the console (§24) |
+| `theme.css` | Theme tokens, dark overrides, control, transition, gallery paper mode (§25) |
+| `theme.js` | Theme engine: preference, shortcut, controls, circular reveal (§25) |
 | `design.md` | This document — canonical visual and behavioural spec |
 | `README.md` | Product premise, philosophy, status, roadmap |
+| `.nojekyll` | Tells GitHub Pages to serve the files verbatim (no Jekyll pass) |
 
 ### 15.2 Structure inside `index.html`
 
 - Base reset, cell/legend styles; floating surfaces outside the view mount: `.tip`, `.logger`, `.runner`, `.toast`, `.backdrop` / `.dialog`.
+- Theme boot script in `<head>` (resolves `auto | light | dark` before the first paint), then `theme.css`; `theme.js` at the end of `<body>` owns the control, shortcut, live system changes, and the transition. No view or component code is theme-aware.
 - `.v1` console styles only; Variant 2/3 styles removed (§17).
 - `ICONS`, seeded demo data (`mulberry32`, `genLog`, `seedHabits`), `goalOf`/`milestonesFor`, `stats`, formatters; `graphHTML`, `metricsHTML1`, `view1`, `animateNumbers`, `revealBars`, `render`, `refreshMetrics`. `BOOT` hydrates from `TenkStore` before the first render; `saveState` is the single write path.
 - Surfaces and machines: `openLogger`/`commit`/`closeLogger`, `openDialog`/`createSkill`/`closeDialog`, `openDeleteConfirm`/`deleteSkill`/`closeDeleteConfirm`, `startSession`/`tickSession`/`finishSession`/`discardSession`/`paintSessionCell` (pointer hold: `press`, `cancelArm`), `openPalette`/`paletteResults`/`fuzzyScore`/`runPaletteItem`/`closePalette`, `openKeys`, `ICON_KEYWORDS`/`normName`/`matchIconFor`/`applyIconMatch` and the `icon · …` line, `MILESTONES`/`milestonesHTML`/`refreshMilestones`; one delegated `keydown` map and the polite live region.
@@ -1032,14 +1036,15 @@ Actions: `New skill…`, `New microskill…`, `Edit daily target…`, `Log today
 | `L` | log today |
 | `S` | start / stop the session for today |
 | `D` | delete this skill (opens the confirm; never deletes outright) |
+| `⌘⇧L` / `Ctrl+Shift+L` | cycle theme: auto → light → dark → auto |
 | `Enter` | run the selected palette row / activate the focused control |
 | `Esc` | close the topmost surface |
 
-`←`/`→` is the rail grammar; `↑`/`↓` aliases it. Single-key shortcuts stay silent in `input`, `textarea`, `select`, `[contenteditable]`, and while any surface is open (session bar, logger, target editor, dialog, palette); exception: `S` ends a session while the bar is focused. `Esc` belongs to the open surface. The console claims only its documented combinations; other modifier combinations pass through. On macOS the browser may reserve `⌘⇧N` for a new incognito window, so `New microskill…` in the palette is the guaranteed keyboard path.
+`←`/`→` is the rail grammar; `↑`/`↓` aliases it. Single-key shortcuts stay silent in `input`, `textarea`, `select`, `[contenteditable]`, and while any surface is open (session bar, logger, target editor, dialog, palette); exception: `S` ends a session while the bar is focused. `Esc` belongs to the open surface. Modifier combinations pass through, except the theme chord (§25.5), which is handled in the capture phase. On macOS the browser may reserve `⌘⇧N` for a new incognito window, so `New microskill…` in the palette is the guaranteed keyboard path.
 
 ### 19.3 Shortcuts cheatsheet
 
-A compact modal per §13.5, `min(520px, calc(100vw - 32px))`, two columns at ≥ `520px` (one below). Four groups — **Navigate**, **Skills**, **Time**, **Surfaces** — each row a hairline `kbd` chip (`10px`, tabular, radius `4px`, `1px #ececec`) and a `10.5px #767676` label. Opened by `?` or the palette action; `Esc`, `close`, or a backdrop click closes; focus trapped and restored.
+A compact modal per §13.5, `min(520px, calc(100vw - 32px))`, two columns at ≥ `520px` (one below). Four groups — **Navigate**, **Skills**, **Time**, **Surfaces** — each row a hairline `kbd` chip (`10px`, tabular, radius `4px`, `1px #ececec`) and a `10.5px #767676` label. The theme row (`⌘⇧L` / `Ctrl+Shift+L`, `cycle theme`) is appended to **Surfaces** by `theme.js`, so the index markup stays unaware of it. Opened by `?` or the palette action; `Esc`, `close`, or a backdrop click closes; focus trapped and restored.
 ---
 
 ## 20. Swipe to log — press a day, drag vertically
@@ -1494,3 +1499,86 @@ The drag surface itself is a `role="group"` labelled `Hobby gallery`; a visually
 ### 24.8 What not to add
 
 Permanent labels on every tile, a second accent, the skill hue, tile cards or shadows, counts and progress on the gallery, hidden unsupported tiles, a filter/search bar, an explicit drag mode, a second back button, or a text banner in place of the hint. Keep the photography and the drag as the interface.
+---
+
+## 25. Theming — auto, light, dark
+
+The page after dark is the same page: same grid, same hairlines, same silence. Light is the canonical canvas of §4; dark is a second set of values for the same tokens, not a second design. Nothing in the view, data, or interaction layers knows which one is active.
+
+### 25.1 Modes and persistence
+
+| Mode | Meaning |
+| --- | --- |
+| `auto` | Follow `prefers-color-scheme`; the default when no choice exists |
+| `light` | White canvas, §4 values, regardless of the system |
+| `dark` | Near-black canvas, §25.2 values, regardless of the system |
+
+The choice lives in `localStorage` under `tenk.theme` as `auto`, `light`, or `dark`; a missing or invalid value means `auto`. The product's own data key (`tenk.v1`) is never touched. A storage failure (private mode, some `file://` contexts) degrades to a session-only preference rather than an error.
+
+`auto` is live: while it is selected, a system appearance change repaints the page; an explicit `light` or `dark` choice wins and ignores the system until the user cycles back to `auto`.
+
+`?theme=light|dark|auto` is a **preview override** for screenshots and debugging. It paints the page without being persisted; the first deliberate change (control click or shortcut) removes the parameter with `history.replaceState` and stores the real preference. It is not a sharing mechanism.
+
+`window.TenkTheme` exposes `get()`, `set(pref)`, `cycle()`, and `refresh()` so a component port can drive the same engine.
+
+### 25.2 Token values
+
+Dark is tuned, never inverted. Values are exact.
+
+| Token | Light | Dark | Use |
+| --- | --- | --- | --- |
+| `--bg` | `#ffffff` | `#0b0b0c` | page, rail, fab |
+| `--surface` | `#ffffff` | `#121214` | popovers, dialogs, session bar |
+| `--surface-2` | `#f7f7f7` | `#17171a` | quick-add, selected rows |
+| `--surface-hover` | `#fafafa` | `#141416` | rail/row hover |
+| `--ink` | `#101010` | `#f2f2f1` | primary text, hero numbers |
+| `--ink-soft` | `#b8b8b8` | `#9a9a9e` | subline, hints, empty states |
+| `--muted` | `#7a7a7a` | `#8f8f94` | meta emphasis, quiet controls |
+| `--line` | `#f1f1f1` | `#1f1f21` | dividers, rules, tile borders |
+| `--line-strong` | `#e7e7e7` | `#2c2c2f` | input underline, chrome |
+| `--cell-empty` | `#f4f4f4` | `#1b1b1e` | level-0 cell |
+| `--shadow` | `0 16px 40px -12px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.04)` | `0 18px 44px -12px rgba(0,0,0,.75), 0 2px 8px rgba(0,0,0,.5)` | floating surfaces |
+| `--shadow-modal` | `0 24px 60px -16px rgba(0,0,0,.22), 0 2px 10px rgba(0,0,0,.04)` | `0 28px 70px -18px rgba(0,0,0,.8), 0 2px 12px rgba(0,0,0,.55)` | modal, palette |
+
+`color-scheme` follows the resolved theme so native form controls and scrollbars match. `::selection` inverts (`ink` on `bg` in dark). `--accent` and `--accent-spark` are re-tuned on `.v1` / `.runner`, where the skill hue lives, so a hue is never resolved at the root.
+
+**Dark cell ramp.** Luminance rises monotonically away from the field; saturation rises with it, so a full cell reads as ink rather than as a grey card.
+
+| Level | Dark fill | Character |
+| --- | --- | --- |
+| 0 | `#1b1b1e` | quiet field, still visible |
+| 1 | `hsl(h 30% 24%)` | a mark |
+| 2 | `hsl(h 37% 35%)` | a habit forming |
+| 3 | `hsl(h 44% 47%)` | on cadence |
+| 4 | `hsl(h 52% 59%)` | above cadence |
+
+### 25.3 What changes, what does not
+
+Only colour changes. Hairlines stay `1px` hairlines; the metric triad, graph, header, and rail keep their exact geometry. **No new cards, panels, gradients, glass, or decorative shadows are introduced**; the only shadow in dark is the existing elevation on surfaces that already floated in light. The only gold remains the milestone row, and it keeps its foil and bevel (§21.5); inert milestone cards become dark metal rather than flat panels. The tooltip, toast, and primary button invert to ink-on-background. Skill hue still appears only in data ink — never on chrome, headings, or controls. `:focus-visible` outlines use `--ink` everywhere.
+
+### 25.4 The control
+
+A single 24-box line glyph, `14px`, at rest in `--muted`, turning `--ink` on hover/focus. The glyph reports the **preference**, not the resolved theme: a half-filled disc for `auto`, a sun for `light`, a moon for `dark`. On approach it names itself, `theme · auto`; assistive technology hears the full state and the next action, `Theme: auto, dark. Activate for light.`
+
+- **Console:** appended to the header legend after `MORE`, separated by a `1px` hairline. The legend's existing gap, type, and baseline are untouched; at `≤520px` the control is `12px` tall so the stacked header does not shift the page by a pixel.
+- **Gallery:** a `32px` floating square at bottom-right, same glyph and tip, `--bg` fill with a hairline border.
+- Both are ordinary `<button>`s with `aria-keyshortcuts="Meta+Shift+L Control+Shift+L"`, keyboard focus, and a `:focus-visible` ring.
+- The cheatsheet row is injected by `theme.js` into the last group, so `index.html` stays free of theme markup.
+
+### 25.5 Shortcut
+
+`⌘⇧L` on macOS, `Ctrl+Shift+L` elsewhere. It cycles `auto → light → dark → auto`, is handled in the capture phase so an open surface cannot swallow it, never fires without the platform modifier, and announces the new mode politely. The current mode is always visible in the control's tip and `aria-label`; the shortcut never depends on remembering the order.
+
+### 25.6 The transition
+
+A **circular reveal** via the View Transitions API: the new theme is clipped from a circle at the control (or the viewport centre for the shortcut), expanding to the farthest corner. Duration `480ms`, easing `cubic-bezier(.2,.8,.2,1)` — the same single curve as everything else. Element-level colour transitions are held still while the snapshots are captured (`html.tenk-vt`), so the revealed frame is the final theme rather than a half-faded one.
+
+Where `document.startViewTransition` is unavailable, a colour-only crossfade runs for `380ms` (`html.tenk-switching`). Under `prefers-reduced-motion: reduce`, both are skipped and the theme changes at once. Nothing animates on load, on system change in `auto`, or on a storage sync from another tab; the reveal belongs to a deliberate choice.
+
+### 25.7 Gallery
+
+The gallery keeps its near-black field (`#050506`) and dark tile placeholders (`#1a1a1f`); light mode is paper (`#f7f7f6`, placeholders `#e9e9e5`, placeholder ink `#6d6d69`). The document backdrop matches the field, so overscroll and safe areas never flash black in light mode. Photographs are the only colour on the page in either mode. The floating theme control is the only chrome.
+
+### 25.8 What not to add
+
+A settings page, an account-level preference, a per-skill theme, a third "dim" theme, a theme preview grid, a hue-tinted dark canvas, glow or neon, a different font for dark, or a second accent. Do not animate theme changes on page load, and do not persist the `?theme` preview. If a new surface needs a colour, add it to the token table for both modes before using it.
