@@ -3,7 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
+<meta name="color-scheme" content="light dark">
+<script>
+/* first paint: resolve auto | light | dark before any stylesheet renders */
+(function(){
+  var d=document.documentElement, pref='auto';
+  try{
+    var q=new URLSearchParams(location.search).get('theme');
+    if(q==='light'||q==='dark'||q==='auto'){ pref=q; }
+    else{
+      var s=localStorage.getItem('tenk.theme');
+      if(s==='light'||s==='dark') pref=s;
+    }
+  }catch(e){}
+  var theme=pref;
+  if(pref==='auto'){
+    try{ theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'; }
+    catch(e){ theme='light'; }
+  }
+  d.dataset.theme=theme;
+  d.dataset.themePref=pref;
+  try{ d.style.colorScheme=theme; }catch(e){}
+})();
+</script>
 <title>10k — Gallery</title>
 <style>
   *,
@@ -107,8 +129,9 @@
     z-index: 1;
   }
 </style>
+<link rel="stylesheet" href="theme.css">
 </head>
-<body>
+<body class="gallery-page">
 <main>
   <div class="gallery" id="gallery">
     <div class="grid" id="grid"></div>
@@ -611,5 +634,6 @@
   });
 })();
 </script>
+<script src="theme.js"></script>
 </body>
 </html>

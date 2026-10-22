@@ -1,0 +1,440 @@
+/* ============================================================
+   10,000 HOURS — THEME LAYER (design.md §22)
+   Loaded after the inline Console styles so light stays exactly
+   as specified and dark is a token/class override, not a rewrite.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   §22.2 TOKENS
+   The shared vocabulary future surfaces consume. Light values
+   are the canonical §4.1 values; dark is tuned for contrast,
+   never a pure inversion.
+   ------------------------------------------------------------ */
+:root{
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+  --d-theme:480ms;
+
+  --bg:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#f7f7f7;
+  --surface-hover:#fafafa;
+  --ink:#101010;
+  --ink-strong:#111111;
+  --ink-soft:#b8b8b8;
+  --muted:#7a7a7a;
+  --line:#f1f1f1;
+  --line-strong:#e7e7e7;
+  --cell-empty:#f4f4f4;
+  --shadow:0 16px 40px -12px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.04);
+  --shadow-modal:0 24px 60px -16px rgba(0,0,0,.22), 0 2px 10px rgba(0,0,0,.04);
+  color-scheme:light;
+}
+
+:root[data-theme="dark"]{
+  --bg:#0b0b0c;
+  --surface:#121214;
+  --surface-2:#17171a;
+  --surface-hover:#141416;
+  --ink:#f2f2f1;
+  --ink-strong:#ffffff;
+  --ink-soft:#9a9a9e;
+  --muted:#8f8f94;
+  --line:#1f1f21;
+  --line-strong:#2c2c2f;
+  --cell-empty:#1b1b1e;
+  --shadow:0 18px 44px -12px rgba(0,0,0,.75), 0 2px 8px rgba(0,0,0,.5);
+  --shadow-modal:0 28px 70px -18px rgba(0,0,0,.8), 0 2px 12px rgba(0,0,0,.55);
+  color-scheme:dark;
+}
+
+/* skill-hue data ink, re-tuned for each canvas */
+.v1,.runner{
+  --accent:hsl(var(--hue),55%,52%);
+  --accent-spark:hsl(var(--hue),45%,80%);
+}
+:root[data-theme="dark"] .v1,
+:root[data-theme="dark"] .runner{
+  --accent:hsl(var(--hue),56%,60%);
+  --accent-spark:hsl(var(--hue),42%,44%);
+}
+
+/* ------------------------------------------------------------
+   §22.3 DARK — the same product, after dark
+   Only colour changes. Hairlines stay hairlines, no cards,
+   shadows, gradients or glass are introduced.
+   ------------------------------------------------------------ */
+
+/* base */
+html[data-theme="dark"],
+html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
+[data-theme="dark"] ::selection{background:var(--ink);color:var(--bg)}
+[data-theme="dark"] ::-webkit-scrollbar-thumb{background:#2a2a2e}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover{background:#3a3a40}
+[data-theme="dark"] input{caret-color:var(--ink)}
+
+/* contribution cells — the neutral field and the five-step ramp.
+   level 0 stays quiet but visible; 1–4 rise monotonically. */
+[data-theme="dark"] .cell,
+[data-theme="dark"] .lg{background:var(--cell-empty)}
+[data-theme="dark"] .cell[data-l="1"],
+[data-theme="dark"] .lg[data-l="1"]{background:hsl(var(--hue),30%,24%)}
+[data-theme="dark"] .cell[data-l="2"],
+[data-theme="dark"] .lg[data-l="2"]{background:hsl(var(--hue),37%,35%)}
+[data-theme="dark"] .cell[data-l="3"],
+[data-theme="dark"] .lg[data-l="3"]{background:hsl(var(--hue),44%,47%)}
+[data-theme="dark"] .cell[data-l="4"],
+[data-theme="dark"] .lg[data-l="4"]{background:hsl(var(--hue),52%,59%)}
+[data-theme="dark"] .cell::after{background:var(--accent)}
+@media (hover:hover) and (pointer:fine){
+  [data-theme="dark"] .cell:hover{box-shadow:0 0 0 1.5px rgba(242,242,241,.55)}
+}
+[data-theme="dark"] .cell.arm{box-shadow:0 0 0 1.5px var(--ink),0 0 0 5px rgba(255,255,255,.09)}
+[data-theme="dark"] .cell.live{box-shadow:0 0 0 1.5px var(--ink)}
+[data-theme="dark"] .g-months span{color:#6c6c73}
+
+/* tooltip inverts, like the toast */
+[data-theme="dark"] .tip{background:var(--ink);color:var(--bg)}
+
+/* rail */
+[data-theme="dark"] .v1 .rail{background:var(--bg);border-right-color:var(--line)}
+[data-theme="dark"] .v1 .rail-btn{color:#55555c}
+[data-theme="dark"] .v1 .rail-btn:hover{color:#b9b9bd;background:var(--surface-hover)}
+[data-theme="dark"] .v1 .rail-btn.on{color:var(--ink)}
+[data-theme="dark"] .v1 .rail-btn.on::before{background:var(--ink)}
+
+/* header */
+[data-theme="dark"] .v1 .hsub{color:var(--ink-soft)}
+[data-theme="dark"] .v1 .hsub b{color:#b9b9bd}
+[data-theme="dark"] .hsub-target{color:#b9b9bd;border-bottom-color:var(--line-strong)}
+[data-theme="dark"] .hsub-target:hover{color:var(--ink);border-bottom-color:var(--ink)}
+[data-theme="dark"] .legend{color:#6c6c73}
+[data-theme="dark"] .hold-hint{color:var(--muted)}
+
+/* metric triad */
+[data-theme="dark"] .tiles{border-top-color:var(--line)}
+[data-theme="dark"] .tile{border-right-color:var(--line)}
+[data-theme="dark"] .tile::before{background:var(--ink)}
+[data-theme="dark"] .t-label{color:#77777d}
+[data-theme="dark"] .t-hint{color:var(--ink-soft)}
+[data-theme="dark"] .t-unit{color:#77777d}
+[data-theme="dark"] .bar{background:var(--line)}
+[data-theme="dark"] .bar-fill{background:var(--accent)}
+[data-theme="dark"] .ruler-ticks i{background:#2a2a2e}
+[data-theme="dark"] .ruler-dot{background:var(--accent);box-shadow:0 0 0 3px var(--bg)}
+[data-theme="dark"] .ruler-dot.off{background:var(--bg);border-color:#3a3a40;box-shadow:0 0 0 3px var(--bg)}
+[data-theme="dark"] .spark i{background:var(--accent-spark)}
+[data-theme="dark"] .spark .tline{border-top-color:#3a3a40}
+
+/* milestones — gold keeps its foil and bevel; only the inert
+   states become dark metal, and the frame turns hairline dark. */
+[data-theme="dark"] .milestones{border-top-color:var(--line)}
+[data-theme="dark"] .ms-count{color:#77777d}
+[data-theme="dark"] .ms-card[data-state="locked"]{
+  border-color:#26262a;
+  background-image:linear-gradient(158deg,#19191c,#141417 46%,#101013 70%,#151518);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -1px 0 rgba(0,0,0,.5);
+}
+[data-theme="dark"] .ms-card[data-state="locked"] .ms-rose{color:rgba(255,255,255,.055)}
+[data-theme="dark"] .ms-card[data-state="locked"] .ms-num{color:#8f8f95;text-shadow:0 1px 0 rgba(0,0,0,.7)}
+[data-theme="dark"] .ms-card[data-state="locked"] .ms-unit{color:#77777d}
+[data-theme="dark"] .ms-card[data-state="locked"] .ms-cap{color:#737379;text-shadow:0 1px 0 rgba(0,0,0,.6)}
+[data-theme="dark"] .ms-card[data-state="locked"] .ms-base{background:#232327}
+
+[data-theme="dark"] .ms-card[data-state="next"]{
+  border-color:#34343a;
+  background-image:
+    radial-gradient(120% 80% at 30% 10%,rgba(255,255,255,.1),rgba(255,255,255,0) 55%),
+    linear-gradient(158deg,#212125,#1a1a1e 44%,#141417 68%,#1c1c20);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.14),
+    inset 0 -1px 0 rgba(0,0,0,.55),
+    inset 0 0 0 1px rgba(255,255,255,.03);
+}
+[data-theme="dark"] .ms-card[data-state="next"] .ms-rose{color:rgba(255,255,255,.06)}
+[data-theme="dark"] .ms-card[data-state="next"] .ms-num{color:#c8c8cc;text-shadow:0 1px 0 rgba(0,0,0,.7),0 -1px 0 rgba(255,255,255,.03)}
+[data-theme="dark"] .ms-card[data-state="next"] .ms-unit{color:#8f8f95}
+[data-theme="dark"] .ms-card[data-state="next"] .ms-cap{color:#8a8a90;text-shadow:0 1px 0 rgba(0,0,0,.6)}
+[data-theme="dark"] .ms-card[data-state="next"] .ms-base{background:#2a2a2e}
+[data-theme="dark"] .ms-card[data-state="next"] .ms-base i{background:var(--accent)}
+[data-theme="dark"] .ms-strip:focus-visible{outline-color:var(--ink)}
+
+/* floating surfaces */
+[data-theme="dark"] .logger,
+[data-theme="dark"] .targeter,
+[data-theme="dark"] .scrub,
+[data-theme="dark"] .runner{
+  background:var(--surface);
+  border-color:var(--line-strong);
+  box-shadow:var(--shadow);
+}
+[data-theme="dark"] .lg-date,
+[data-theme="dark"] .tg-label,
+[data-theme="dark"] .sc-date{color:#77777d}
+[data-theme="dark"] .lg-input-wrap{border-bottom-color:var(--line-strong)}
+[data-theme="dark"] .lg-input,
+[data-theme="dark"] .sc-num,
+[data-theme="dark"] .tg-num{color:var(--ink)}
+[data-theme="dark"] .lg-input::placeholder{color:#3a3a40}
+[data-theme="dark"] .lg-h,
+[data-theme="dark"] .sc-h,
+[data-theme="dark"] .tg-unit{color:#6c6c73}
+[data-theme="dark"] .lg-quick button{background:var(--surface-2);color:#b9b9bd}
+[data-theme="dark"] .lg-quick button:hover{background:var(--ink);color:var(--bg)}
+[data-theme="dark"] .lg-foot,
+[data-theme="dark"] .tg-foot{border-top-color:var(--line)}
+[data-theme="dark"] .lg-clear,
+[data-theme="dark"] .lg-timer,
+[data-theme="dark"] .tg-save{color:var(--muted)}
+[data-theme="dark"] .lg-timer:hover,
+[data-theme="dark"] .tg-save:hover{color:var(--ink)}
+[data-theme="dark"] .lg-clear:hover{color:#ff7a7a}
+[data-theme="dark"] .lg-hint{color:#55555c}
+[data-theme="dark"] .sc-delta{color:var(--muted)}
+[data-theme="dark"] .sc-delta[data-zero="1"]{color:#55555c}
+[data-theme="dark"] .sc-track{background:var(--line)}
+[data-theme="dark"] .sc-ticks i{background:#2a2a2e}
+[data-theme="dark"] .sc-knob{background:var(--ink);box-shadow:0 0 0 2.5px var(--surface)}
+[data-theme="dark"] .tg-ticks i{background:#2a2a2e}
+/* keep vendor pseudo-elements in their own rules: one unknown
+   selector in a list invalidates the whole declaration in Chrome */
+[data-theme="dark"] .tg-range::-webkit-slider-runnable-track{background:#2a2a2e}
+[data-theme="dark"] .tg-range::-moz-range-track{background:#2a2a2e}
+[data-theme="dark"] .tg-range::-webkit-slider-thumb{background:var(--ink);box-shadow:0 0 0 3px var(--surface)}
+[data-theme="dark"] .tg-range::-moz-range-thumb{background:var(--ink);box-shadow:0 0 0 3px var(--surface)}
+[data-theme="dark"] .tg-step{background:var(--surface-2);color:#b9b9bd}
+[data-theme="dark"] .tg-step:hover{background:var(--ink);color:var(--bg)}
+
+/* live session */
+[data-theme="dark"] .run-meta{color:var(--muted)}
+[data-theme="dark"] .run-time{color:var(--ink)}
+[data-theme="dark"] .run-bar{background:var(--line)}
+[data-theme="dark"] .run-bar i{background:var(--accent)}
+[data-theme="dark"] .run-sep{background:var(--line)}
+[data-theme="dark"] .run-log{background:var(--ink);color:var(--bg)}
+[data-theme="dark"] .run-log:hover{background:#fff}
+[data-theme="dark"] .run-drop{color:var(--muted)}
+[data-theme="dark"] .run-drop:hover{color:#ff7a7a}
+
+/* toast */
+[data-theme="dark"] .toast{background:var(--ink);color:var(--bg)}
+
+/* dialogs and their white-out equivalent */
+[data-theme="dark"] .backdrop,
+[data-theme="dark"] .cmdk-back{background:rgba(6,6,8,.74)}
+[data-theme="dark"] .dialog,
+[data-theme="dark"] .cmdk{
+  background:var(--surface);
+  border-color:var(--line-strong);
+  box-shadow:var(--shadow-modal);
+}
+[data-theme="dark"] .dlg-sub{color:var(--ink-soft)}
+[data-theme="dark"] .dlg-label,
+[data-theme="dark"] .cmdk-label,
+[data-theme="dark"] .keys-title{color:#77777d}
+[data-theme="dark"] .dlg-name{
+  color:var(--ink);
+  border-bottom-color:var(--line-strong);
+  background:transparent;
+}
+[data-theme="dark"] .dlg-name:focus{border-bottom-color:var(--ink)}
+[data-theme="dark"] .dlg-name::placeholder{color:#3a3a40}
+[data-theme="dark"] .dlg-err{color:#ff7a7a}
+[data-theme="dark"] .dlg-match{color:#77777d}
+[data-theme="dark"] .icon-opt{color:#55555c}
+[data-theme="dark"] .icon-opt:hover{color:#c8c8cc;background:var(--surface-hover)}
+[data-theme="dark"] .icon-opt[aria-pressed="true"]{color:var(--ink);box-shadow:0 0 0 1.5px var(--ink)}
+[data-theme="dark"] .hue-opt[aria-pressed="true"]::before{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--ink)}
+[data-theme="dark"] .step-btn{background:var(--surface-2);color:#b9b9bd}
+[data-theme="dark"] .step-btn:not(:disabled):hover{background:var(--ink);color:var(--bg)}
+[data-theme="dark"] .step-val{color:var(--ink)}
+[data-theme="dark"] .step-unit{color:#6c6c73}
+[data-theme="dark"] .btn-ghost{color:var(--muted)}
+[data-theme="dark"] .btn-ghost:hover{color:var(--ink);background:var(--surface-hover)}
+[data-theme="dark"] .btn-primary{background:var(--ink);color:var(--bg)}
+[data-theme="dark"] .btn-primary:hover{background:#fff}
+[data-theme="dark"] .btn-danger,
+[data-theme="dark"] .btn-danger:hover{color:#ff7a7a}
+[data-theme="dark"] .btn-danger:hover{background:#1a1113}
+
+/* command palette + cheatsheet */
+[data-theme="dark"] .cmdk-search{border-bottom-color:var(--line)}
+[data-theme="dark"] .cmdk-input{color:var(--ink)}
+[data-theme="dark"] .cmdk-input::placeholder{color:#3a3a40}
+[data-theme="dark"] .cmdk-row{color:var(--ink)}
+[data-theme="dark"] .cmdk-row:hover{background:var(--surface-hover)}
+[data-theme="dark"] .cmdk-row[aria-selected="true"]{background:var(--surface-2)}
+[data-theme="dark"] .cmdk-row[aria-selected="true"]::before{background:var(--ink)}
+[data-theme="dark"] .cmdk-ico{color:#55555c}
+[data-theme="dark"] .cmdk-row[aria-selected="true"] .cmdk-ico{color:var(--ink)}
+[data-theme="dark"] .cmdk-key{color:#55555c}
+[data-theme="dark"] .cmdk-empty{color:var(--ink-soft)}
+[data-theme="dark"] .cmdk-foot{border-top-color:var(--line);color:#55555c}
+[data-theme="dark"] .kbd{
+  background:var(--surface);
+  border-color:var(--line-strong);
+  color:#b9b9bd;
+}
+[data-theme="dark"] .keys-label{color:var(--muted)}
+
+/* mobile chrome */
+@media (max-width:860px){
+  [data-theme="dark"] .v1 .rail{border-top-color:var(--line);border-right-color:transparent}
+  [data-theme="dark"] .tile{border-bottom-color:var(--line)}
+}
+
+/* focus stays visible everywhere */
+[data-theme="dark"] :focus-visible{outline-color:var(--ink)!important}
+
+/* ------------------------------------------------------------
+   §22.4 THEME CONTROL
+   One 24-box line glyph, quiet at rest, named on approach.
+   Injected by theme.js into the header legend (index) and as a
+   floating control (gallery); markup in the pages is untouched.
+   ------------------------------------------------------------ */
+.theme-btn,
+.theme-fab{
+  position:relative;
+  display:inline-grid;place-items:center;
+  margin:0;padding:0;border:0;border-radius:7px;
+  background:none;color:var(--muted);
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .18s var(--ease-out),background-color .18s var(--ease-out);
+}
+.theme-btn{
+  width:24px;height:20px;
+  margin-left:8px;padding-left:8px;
+  border-left:1px solid var(--line-strong);
+  border-radius:0 6px 6px 0;
+}
+.theme-btn:hover,
+.theme-btn:focus-visible,
+.theme-fab:hover,
+.theme-fab:focus-visible{color:var(--ink)}
+.theme-btn:active{transform:scale(.94)}
+.theme-btn:focus-visible,
+.theme-fab:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.theme-btn svg,.theme-fab svg{width:14px;height:14px}
+.theme-fab{
+  position:fixed;right:18px;bottom:18px;z-index:20;
+  width:32px;height:32px;
+  border:1px solid var(--line-strong);
+  background:var(--bg);
+}
+.theme-fab:active{transform:scale(.94)}
+.theme-fab svg{width:15px;height:15px}
+
+/* only the current mode's glyph is laid out */
+.theme-ico{display:none}
+.theme-btn[data-pref="auto"] .theme-ico--auto,
+.theme-btn[data-pref="light"] .theme-ico--light,
+.theme-btn[data-pref="dark"] .theme-ico--dark,
+.theme-fab[data-pref="auto"] .theme-ico--auto,
+.theme-fab[data-pref="light"] .theme-ico--light,
+.theme-fab[data-pref="dark"] .theme-ico--dark{display:block}
+
+/* the tucked state: theme · auto */
+.theme-tip{
+  position:absolute;right:-2px;top:calc(100% + 8px);
+  z-index:300;
+  padding:4px 7px;border-radius:6px;
+  background:var(--ink);color:var(--bg);
+  font:300 10px/1.2 'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+  letter-spacing:.02em;white-space:nowrap;
+  opacity:0;transform:translateY(-2px);pointer-events:none;
+  transition:opacity .14s var(--ease-out),transform .14s var(--ease-out);
+}
+.theme-fab .theme-tip{top:auto;bottom:calc(100% + 8px);transform:translateY(2px)}
+.theme-btn:hover .theme-tip,
+.theme-btn:focus-visible .theme-tip,
+.theme-fab:hover .theme-tip,
+.theme-fab:focus-visible .theme-tip{opacity:1;transform:none}
+
+@media (max-width:520px){
+  /* the header stacks into a column here, so the control must not
+     add a single pixel to the legend's line box */
+  .theme-btn{width:22px;height:12px;margin-left:6px;padding-left:6px}
+  .theme-btn svg{width:12px;height:12px}
+  .theme-fab{right:14px;bottom:14px}
+}
+@media (pointer:coarse){
+  .theme-fab::before{content:'';position:absolute;inset:-6px}
+}
+
+/* ------------------------------------------------------------
+   §22.6 THEME TRANSITION
+   A 480ms circular reveal from the control (View Transitions),
+   or a colour-only crossfade where the API is missing. The
+   fallback class is only ever added by an explicit change, so
+   nothing animates on page load.
+   ------------------------------------------------------------ */
+::view-transition-old(root),
+::view-transition-new(root){
+  animation:none;
+  mix-blend-mode:normal;
+}
+::view-transition-new(root){
+  animation:themeReveal var(--d-theme) var(--ease-out) both;
+}
+@keyframes themeReveal{
+  from{clip-path:circle(0px at var(--tenk-x,50vw) var(--tenk-y,50vh))}
+  to{clip-path:circle(var(--tenk-r,150vmax) at var(--tenk-x,50vw) var(--tenk-y,50vh))}
+}
+
+html.tenk-switching,
+html.tenk-switching *,
+html.tenk-switching *::before,
+html.tenk-switching *::after{
+  transition-property:background-color,border-color,color,fill,stroke,box-shadow!important;
+  transition-duration:380ms!important;
+  transition-timing-function:var(--ease-out)!important;
+}
+
+/* While a View Transition is being captured, element-level colour
+   fades would double up with the circular reveal and smear the new
+   snapshot. Hold them still; the pseudo-element does the motion. */
+html.tenk-vt,
+html.tenk-vt *,
+html.tenk-vt *::before,
+html.tenk-vt *::after{transition:none!important}
+
+@media (prefers-reduced-motion:reduce){
+  ::view-transition-old(root),
+  ::view-transition-new(root){animation:none!important}
+  html.tenk-switching,
+  html.tenk-switching *,
+  html.tenk-switching *::before,
+  html.tenk-switching *::after{transition-duration:.01ms!important}
+  .theme-btn:active,
+  .theme-fab:active{transform:none}
+}
+
+/* a private live region for theme announcements */
+.tenk-sr{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+}
+
+/* the shortcut chip needs to fit the cheatsheet column */
+.kbd-theme{font-size:9px;padding:0 4px;letter-spacing:0}
+
+/* ------------------------------------------------------------
+   §22.7 GALLERY
+   Dark stays near-black; light is paper. Photographs remain the
+   only colour on the page.
+   ------------------------------------------------------------ */
+[data-theme="dark"] body.gallery-page,
+[data-theme="dark"] body.gallery-page .gallery{background:#050506}
+[data-theme="dark"] body.gallery-page .tile{background-color:#1a1a1f;color:rgba(255,255,255,.85)}
+
+[data-theme="light"] body.gallery-page,
+[data-theme="light"] body.gallery-page .gallery{background:#f7f7f6}
+[data-theme="light"] body.gallery-page .tile{
+  background-color:#e9e9e5;
+  color:#6d6d69;
+}
+[data-theme="light"] body.gallery-page .theme-fab{
+  background:#ffffff;
+  border-color:#e2e2de;
+}
+[data-theme="light"] body.gallery-page .theme-btn{border-left-color:#e2e2de}
