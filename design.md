@@ -380,7 +380,7 @@ Three tiles, one row, hairlines between, answering in order: **how much**, **how
 | Tile | Label icon | Value | Evidence visual | Hover hint |
 | --- | --- | --- | --- | --- |
 | Cumulative | clock | total hours, `0` decimals | 2px progress bar to 10,000 | `N sessions · since Mon YYYY` |
-| ETA | calendar | `Mon YYYY` or `—` | 0–10-year ruler with accent dot | `N days left` / `no pace yet` |
+| ETA | calendar | `Mon YYYY` or `—` | 0–10-year ruler with accent dot | `next N h · N days` / `no pace yet` |
 | Pace | pulse | h/day, `1` decimal | 14-day sparkline with dashed target line | `1.42× target · 3 h/day` |
 
 A fourth metric goes below (§13.4) or replaces a tile — never a 2×2 grid. The triad is a composition, not a container.
@@ -548,7 +548,7 @@ r = hours / target
 
 ### 9.5 Empty and edge states
 
-**No sessions:** ETA `—`, pace `0.0`, bar at `0`, sparkline baseline only, subline `No sessions logged yet`; the graph remains. **No pace** (all-time zero in 28 days): ETA `—`, ruler ticks, no dot, hint `no pace yet`. **> 10-year ETA:** dot pins right in the "off" style, hint reports exact days. **Completed 10,000h:** bar `100%`, ETA shows the completion date, one quiet state change (§13.7). **Future days:** not rendered; do not grey them in.
+**No sessions:** ETA `—`, pace `0.0`, bar at `0`, sparkline baseline only, subline `No sessions logged yet`; the graph remains. **No pace** (all-time zero in 28 days): ETA `—`, ruler ticks, no dot, hint `no pace yet`. **ETA horizon:** the date is the projected arrival at the *next* unachieved milestone (§21), not at 10,000 h; the ruler therefore measures years to that threshold. **> 10-year ETA:** dot pins right in the "off" style, hint reports exact days. **Completed 10,000h:** bar `100%`, ETA reads `—` with hint `10,000 h reached`, one quiet state change (§13.7). **Future days:** not rendered; do not grey them in.
 ---
 
 ## 10. Copy

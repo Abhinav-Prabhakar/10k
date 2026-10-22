@@ -1117,7 +1117,12 @@ function stats(h){
   const recent = days.slice(-W);
   const pace = recent.reduce((s,x)=>s+x.v, 0) / W;
   const remaining = Math.max(0, 10000 - total);
-  const etaDays = pace > 0 ? remaining / pace : Infinity;
+  /* ETA answers "when is the next milestone?", not "when is 10,000?"
+     The cumulative bar still measures distance to the summit. */
+  const nextMs = MILESTONES.find(m => total < m) || null;
+  const goal = nextMs === null ? 10000 : nextMs;
+  const toGoal = Math.max(0, goal - total);
+  const etaDays = pace > 0 ? toGoal / pace : Infinity;
   const eta = isFinite(etaDays) ? addDays(today, Math.round(etaDays)) : null;
 
   let streak = 0;
@@ -1125,7 +1130,7 @@ function stats(h){
   if(days[i] && days[i].v === 0) i--;
   for(; i >= 0; i--){ if(days[i].v > 0) streak++; else break; }
 
-  return {days, total, first, sessions, pace, remaining, eta, etaDays, ratio: pace / h.target, streak};
+  return {days, total, first, sessions, pace, remaining, nextMs, goal, toGoal, eta, etaDays, ratio: pace / h.target, streak};
 }
 
 /* ============================================================
@@ -1235,7 +1240,7 @@ function metricsHTML1(h, s){
     <div class="tile">
       <div class="t-top">
         <span class="t-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS.cal}</svg>ETA</span>
-        <span class="t-hint">${s.eta ? fmtInt(s.etaDays)+' days left' : 'no pace yet'}</span>
+        <span class="t-hint">${s.total >= 10000 ? '10,000 h reached' : (s.eta ? `next ${fmtInt(s.nextMs)} h · ${fmtInt(s.etaDays)} days` : 'no pace yet')}</span>
       </div>
       <div class="t-value"><span class="date">${s.eta ? fmtMonYr(s.eta) : '—'}</span></div>
       ${rulerHTML(h, s)}

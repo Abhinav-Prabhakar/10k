@@ -41,7 +41,7 @@ waiting. The graph is both a record and an invitation.
 | | Question | Visual |
 | --- | --- | --- |
 | **Cumulative** | How much have I actually done? | Hours, with a hairline bar toward 10,000 |
-| **ETA** | When do I arrive at this pace? | A month and year, with a dot on a 0–10 year ruler |
+| **ETA** | When do I reach the next milestone at this pace? | A month and year, with a dot on a 0–10 year ruler |
 | **Pace** | Am I moving fast enough? | h/day, with a 14-day sparkline and target line |
 
 Each is one value, one visual, and a hint that appears only when you hover. No dashboard, no chart
