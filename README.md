@@ -304,8 +304,10 @@ There is no build step and nothing to compile: Pages serves `index.html`, `galle
 file keeps Pages from running the files through Jekyll, so the underscore-free paths and assets are
 served verbatim.
 
-Deployment is just a push to `main` — no GitHub Actions, no deployment checks, no environment secrets.
-Vercel is retired for this project; there is no `vercel.json`, `CNAME`, or workflow file to maintain.
+Deployment is just a push to `main` — no project workflows, no Vercel or third-party deployment checks,
+and no environment secrets. GitHub Pages runs its own built-in build on `main`; it is not a pull-request
+gate and there is nothing to configure here. Vercel is retired for this project; there is no `vercel.json`,
+`CNAME`, or workflow file to maintain.
 The page is a static prototype, so there is no server, database, or API to configure.
 
 ### Previewing a theme
