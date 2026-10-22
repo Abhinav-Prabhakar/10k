@@ -427,6 +427,11 @@ html.tenk-vt *::after{transition:none!important}
 [data-theme="dark"] body.gallery-page .gallery{background:#050506}
 [data-theme="dark"] body.gallery-page .tile{background-color:#1a1a1f;color:rgba(255,255,255,.85)}
 
+/* the document backdrop behind the fixed grid, for overscroll and
+   safe areas; :has keeps this scoped to the gallery page */
+html[data-theme="dark"]:has(body.gallery-page){background:#050506}
+html[data-theme="light"]:has(body.gallery-page){background:#f7f7f6}
+
 [data-theme="light"] body.gallery-page,
 [data-theme="light"] body.gallery-page .gallery{background:#f7f7f6}
 [data-theme="light"] body.gallery-page .tile{

@@ -1233,7 +1233,7 @@ Where `document.startViewTransition` is unavailable, a colour-only crossfade run
 
 ### 22.7 Gallery
 
-The gallery keeps its near-black field (`#050506`) and dark tile placeholders (`#1a1a1f`); light mode is paper (`#f7f7f6`, placeholders `#e9e9e5`, placeholder ink `#6d6d69`). Photographs are the only colour on the page in either mode. The floating theme control is the only chrome.
+The gallery keeps its near-black field (`#050506`) and dark tile placeholders (`#1a1a1f`); light mode is paper (`#f7f7f6`, placeholders `#e9e9e5`, placeholder ink `#6d6d69`). The document backdrop matches the field, so overscroll and safe areas never flash black in light mode. Photographs are the only colour on the page in either mode. The floating theme control is the only chrome.
 
 ### 22.8 What not to add
 
