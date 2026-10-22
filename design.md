@@ -686,7 +686,7 @@ Typing picks the icon. Each of the 42 glyphs carries a lowercase vocabulary (`IC
 | `share-card.js` | 1080 × 1920 poster composer, download, keyboard fallback (§22) |
 | `store.js` | Local-first persistence: `tenk.v1` envelope, validation, migration, corrupt fallback (§23.6) |
 | `store.test.js` | Node tests for the store contract (`node store.test.js`) |
-| `microskill.css` | Microskill-only marks: rail dot and tooltip, header goal mark, dialog goal badge |
+| `microskill.css` | Microskill create-dialog mode and plus hint |
 | `gallery.html` | Standalone image-led index of hobbies; supported tiles deep-link into the console (§24) |
 | `theme.css` | Theme tokens, dark overrides, control, transition, gallery paper mode (§25) |
 | `theme.js` | Theme engine: preference, shortcut, controls, circular reveal (§25) |
@@ -1304,22 +1304,17 @@ Everything downstream follows:
 - **Pace, levels, graph, target, streak** — untouched. A microskill is not a different unit of work;
   it is the same work with a nearer horizon.
 
-### 23.3 Rail indicator
+### 23.3 No rail or header marker
 
-Microskills are not a separate rail group. Each micro rail button keeps its icon and adds one mark:
+Microskills are **not** marked in the rail or in the page header. A micro rail button uses the same
+icon, title, active marker, hover fill, and press scale as every other skill. The subline carries only
+the editable target. The shorter horizon is communicated structurally, by the milestone row ending at
+`1,000` (§23.2), and named once at creation by the dialog (§23.4).
 
-| Property | Spec |
-| --- | --- |
-| Mark | `3 × 3px` dot, `border-radius:50%`, bottom-right inset `6px` (`8px` at ≤860px) |
-| Colour | the skill's own hue, `hsl(var(--h),55%,52%)` — data ink, never the interface accent |
-| Rest | no ring, no badge, no label, no different icon size |
-| Tooltip | `microskill · 1,000 h`, `10.5px/300`, ink background, white text, `5px 9px`, radius `6px`, `12px` right of the button |
-| Reveal | hover **or** `:focus-visible`, `140ms` opacity with a `4px` settle; hidden from assistive tech (`aria-hidden`) |
-| Accessible name | `<name>, microskill, 1,000 hours` — the tooltip is decoration, not the label |
-
-Micro rail buttons deliberately omit the native `title` attribute: the custom tooltip carries the same
-fact without a second, delayed browser tooltip. Normal skills keep `title` and gain no dot. The active
-marker (`::before`), hover fill, and press scale are unchanged.
+The plus keeps its quiet modifier hint (`⌘ click · microskill` / `Ctrl click · microskill`) because
+that is a creation affordance, not a per-skill mark. For assistive technology the rail button's
+accessible name still carries the fact — `<name>, microskill, 1,000 hours` — so the horizon is never
+lost to a screen reader. No dot, tooltip, badge, ring, or header mark exists in the visual UI.
 
 ### 23.4 Create dialog
 
@@ -1339,12 +1334,11 @@ The badge is the only new material in the dialog: no gold, no hue, no gradient, 
 name, 42-icon picker, hue picker, and target stepper are identical in both modes. `create` writes
 `goal: 1000, micro: true` in micro mode and `goal: 10000, micro: false` otherwise.
 
-### 23.5 Header goal mark
+### 23.5 No header marker
 
-The subline may carry the horizon after the editable target: `· 1,000 h`, with a `3px` hue dot and a
-hover title `microskill · 1,000 h`. It is inline text, not a badge, and never part of `<h1>`. Normal
-skills show no mark, so the default header remains exactly as specified in §3. The mark's accessible
-label says `microskill, 1,000 hour goal`; the visible text stays quiet.
+The page header is unchanged for a microskill: title, tracking line, target button, legend, gallery,
+and theme control are identical. No horizon text or dot follows the target. The milestone row is the
+only visual record of the shorter goal.
 
 ### 23.6 Persistence
 
@@ -1389,8 +1383,8 @@ There is no cross-tab merge: the last write wins, and the page is not a collabor
 
 ### 23.7 Accessibility, copy, reduced motion
 
-- The rail's accessible name is the complete fact — `<name>, microskill, 1,000 hours`; the 3px dot is
-  decorative. The custom tooltip is `aria-hidden` and appears on keyboard focus as well as hover.
+- The rail's accessible name is the complete fact — `<name>, microskill, 1,000 hours` — even though the
+  visual rail is identical to every other skill.
 - The plus keeps `aria-label="Add skill"` and gains `aria-keyshortcuts="Meta+Shift+N Control+Shift+N"`;
   the palette action and shortcut mean the modifier gesture is never the only route.
 - The dialog remains `role="dialog"`, `aria-modal="true"`, labelled by its title; the goal badge is
@@ -1398,16 +1392,15 @@ There is no cross-tab merge: the last write wins, and the page is not a collabor
   the rail button after creation.
 - Copy uses **microskill** as one word, lowercase in running text, capitalised only in the dialog title.
   The horizon is always formatted with a thousands separator: `1,000 h`.
-- `prefers-reduced-motion`: the dot is static, the badge appears without transform, the tooltip appears
-  without settle. No other motion is added. Gold remains confined to §21; the micro mark is hue data ink
-  only.
+- `prefers-reduced-motion`: the dialog badge appears without transform. No other motion is added. Gold
+  remains confined to §21; the only hue remains data ink.
 
 ### 23.8 What not to add
 
 A sticky modifier or "last used mode"; a separate micro page, route, or storage key; a second accent,
-badge, or icon family; a ring or progress arc in the rail; a special graph, cell style, or level scale; a
-countdown, percentage, or "hours to go"; gold outside the milestone row; auto-promoting a skill to
-micro because its target is small; or an in-dialog horizon slider. The horizon is chosen once, at
+badge, or icon family; a dot, ring, tooltip, or header mark for a microskill; a special graph, cell
+style, or level scale; a countdown, percentage, or "hours to go"; gold outside the milestone row;
+auto-promoting a skill to micro because its target is small; or an in-dialog horizon slider. The horizon is chosen once, at
 creation, and everything else stays the same instrument.
 
 ---

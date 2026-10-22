@@ -1508,22 +1508,17 @@ function refreshMilestones(opts){
    VIEW BUILDERS
    ============================================================ */
 function railIcon(x, i){
-  const micro = x.micro === true;
-  const label = micro ? `${x.name}, microskill, ${fmtInt(goalOf(x))} hours` : x.name;
-  const tip = micro ? `<span class="rail-tip" aria-hidden="true">microskill · ${fmtInt(goalOf(x))} h</span>` : '';
-  return `<button class="rail-btn ${i===state.hi?'on':''}${micro?' is-micro':''}" data-h="${i}" style="--h:${x.hue}" ${micro?'':`title="${x.name}"`} aria-label="${label}">
-    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[x.icon]}</svg>${tip}
+  const label = x.micro === true ? `${x.name}, microskill, ${fmtInt(goalOf(x))} hours` : x.name;
+  return `<button class="rail-btn ${i===state.hi?'on':''}" data-h="${i}" title="${x.name}" aria-label="${label}">
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[x.icon]}</svg>
   </button>`;
 }
 
 function view1(h){
   const s = stats(h);
   const root = document.createElement('div');
-  root.className = `v1 view${h.micro ? ' is-micro' : ''}`;
+  root.className = 'v1 view';
   root.style.setProperty('--hue', h.hue);
-  const goalMark = h.micro
-    ? ` · <span class="hsub-goal" title="microskill · ${fmtInt(goalOf(h))} h" aria-label="microskill, ${fmtInt(goalOf(h))} hour goal"><i aria-hidden="true"></i>${fmtInt(goalOf(h))} h</span>`
-    : '';
   root.innerHTML = `
     <nav class="rail">${HABITS.map(railIcon).join('')}
       <button class="rail-btn rail-add" data-add type="button" title="Add skill" aria-label="Add skill" aria-keyshortcuts="Meta+Shift+N Control+Shift+N">
@@ -1535,7 +1530,7 @@ function view1(h){
       <header class="head">
         <div>
           <h1>${h.name}</h1>
-          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit daily target, ${fmtTarget(h.target)} h/day">${fmtTarget(h.target)} h/day</button>${goalMark}</p>
+          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit daily target, ${fmtTarget(h.target)} h/day">${fmtTarget(h.target)} h/day</button></p>
         </div>
         <div class="head-right">
           <div class="head-tools">

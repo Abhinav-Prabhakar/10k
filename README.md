@@ -118,9 +118,9 @@ instrument at a smaller scale.
 
 The horizon is data, not decoration. It changes `remaining`, the cumulative bar, the milestone count
 and summit card, the next-milestone ETA, and the completion copy; a microskill at 1,000 hours says
-`1,000 h reached`, never `10,000 h reached`. In the rail the skill's own hue gets one small dot, and a
-hover or focus tooltip names it (`microskill · 1,000 h`); the page subline carries the same mark. There
-is no second accent, no badge, and no special graph. The trigger, visual rules, and persistence
+`1,000 h reached`, never `10,000 h reached`. The rail and page header stay identical to every other
+skill; the shorter milestone row is the only visible difference. There is no second accent, no badge,
+and no special graph. The trigger, visual rules, and persistence
 contract are specified in [`design.md` §23](./design.md#23-microskills--a-shorter-horizon).
 
 ### Sharing a card
@@ -149,9 +149,8 @@ not seeded with demo hours; the first square is yours to fill.
 Skills can be removed with the same restraint. Press and hold a rail icon — or right-click it, or focus
 it and press `Delete`/`Backspace` — and a short confirm names the skill and what will be lost:
 `42 sessions · 531 h will be removed.` Nothing is added to the rail at rest: no menu, no delete
-button, no control. (A microskill's 3px hue dot is the one resting mark, and it reports a horizon, not
-an action — §23.3.) `Esc` or `cancel` leaves everything intact, and the last remaining skill cannot be
-deleted (`Keep at least one skill.`).
+button, no control, no microskill mark. `Esc` or `cancel` leaves everything intact, and the last
+remaining skill cannot be deleted (`Keep at least one skill.`).
 
 ### The gallery
 
@@ -266,7 +265,7 @@ This repository currently holds a **design prototype**, not a finished app.
   separately, in `tenk.theme`.
 - [`store.js`](./store.js) — the dependency-free persistence module (versioned envelope, validation,
   migration, corrupt-payload fallback). [`store.test.js`](./store.test.js) exercises the contract in
-  Node. [`microskill.css`](./microskill.css) holds the microskill-only rail, header, and dialog marks.
+  Node. [`microskill.css`](./microskill.css) holds the microskill create-dialog mode.
 - [`gallery.html`](./gallery.html) — standalone draggable index of 225 hobby photographs. Four hobby
   types map to existing skills and open their pages; the rest are grayscale previews marked `soon`.
   Reads `tenk.v1` defensively when present. A `home` pill returns to the console.
@@ -352,7 +351,7 @@ gamified badges, AI coaching. The product's value is its quietness.
 ├── share-card.js   # 1080 × 1920 poster composer and download (§22)
 ├── store.js        # local-first persistence: tenk.v1, validation, migration, fallback (§23)
 ├── store.test.js   # Node tests for the persistence contract
-├── microskill.css  # microskill-only rail, header, and dialog marks
+├── microskill.css  # microskill create-dialog mode
 ├── gallery.html    # draggable 225-photo hobby index; supported tiles deep-link into the console (§24)
 ├── theme.css       # theme tokens, dark overrides, control, transition, gallery paper mode (§25)
 ├── theme.js        # theme engine: auto/light/dark, shortcut, circular reveal (§25)
