@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>10k — Gallery</title>
+<style>
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000000;
+    overscroll-behavior: none;
+  }
+
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  main {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+
+  .gallery {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-width: 600px;
+    min-height: 600px;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: grab;
+    background: #000000;
+  }
+
+  .gallery.is-dragging {
+    cursor: grabbing;
+  }
+
+  .grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3280px;
+    height: 3280px;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(15, 200px);
+    grid-template-rows: repeat(15, 200px);
+    grid-auto-rows: 200px;
+    gap: 20px;
+    will-change: transform;
+    transform: translate3d(20px, 20px, 0);
+  }
+
+  .tile {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    overflow: hidden;
+    border-radius: 15px;
+    background-color: #1a1a1f;
+    color: rgba(255, 255, 255, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .gallery.is-dragging .tile {
+    cursor: grabbing;
+  }
+
+  .tile img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    z-index: 1;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="gallery" id="gallery">
+    <div class="grid" id="grid"></div>
+  </div>
+</main>
+<script>
+(function () {
+  "use strict";
+
+  /* ------------------------------------------------------------------ */
+  /* Data — same items, same order as the React component's defaults.    */
+  /* ------------------------------------------------------------------ */
+
+  var ITEMS = [
+    { src: "images/piano.jpg", alt: "Piano" },
+    { src: "images/chess.jpg", alt: "Chess" },
+    { src: "images/gym.jpg", alt: "Gym" },
+    { src: "images/cycling.jpg", alt: "Cycling" },
+    { src: "images/guitar.jpg", alt: "Guitar" },
+    { src: "images/coding.jpg", alt: "Coding" },
+    { src: "images/basketball.jpg", alt: "Basketball" },
+    { src: "images/boxing.jpg", alt: "Boxing" },
+    { src: "images/cooking.jpg", alt: "Cooking" },
+    { src: "images/jee.jpg", alt: "JEE" },
+    { src: "images/painting.jpg", alt: "Painting" },
+    { src: "images/swimming.jpg", alt: "Swimming" },
+    { src: "images/archery.jpg", alt: "Archery" },
+    { src: "images/cali.jpg", alt: "Calisthenics" },
+    { src: "images/dancing.jpg", alt: "Dancing" },
+    { src: "images/golfing.jpg", alt: "Golfing" },
+    { src: "images/ice-skating.jpg", alt: "Ice Skating" },
+    { src: "images/karting.jpg", alt: "Karting" },
+    { src: "images/martial-arts.png", alt: "Martial Arts" },
+    { src: "images/running.jpg", alt: "Running" }
+  ];
+
+  /* ------------------------------------------------------------------ */
+  /* Deterministic layout — verbatim port of DraggableGrid.tsx.          */
+  /* ------------------------------------------------------------------ */
+
+  // Deterministic PRNG (mulberry32) so the shuffle is stable across renders
+  // once seeded — no flicker on every re-render.
+  function mulberry32(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6d2b79f5) >>> 0;
+      var t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Spatially disperses items across a 2D grid such that identical/repeating
+  // items are maximally separated in 2D Euclidean distance.
+  function distribute2DGrid(items, cols, rows, seed) {
+    var K = items.length;
+    var N = cols * rows;
+    if (K === 0 || N === 0) return [];
+    if (K === 1) return new Array(N).fill(items[0]);
+    var rand = mulberry32(seed);
+
+    // Build balanced item counts across the grid
+    var counts = new Array(K).fill(Math.floor(N / K));
+    var remainder = N % K;
+    var perm = Array.from({ length: K }, function (_, i) { return i; });
+    for (var i = K - 1; i > 0; i--) {
+      var j = Math.floor(rand() * (i + 1));
+      var tmp = perm[i];
+      perm[i] = perm[j];
+      perm[j] = tmp;
+    }
+    for (var ri = 0; ri < remainder; ri++) counts[perm[ri]]++;
+
+    var grid = new Array(N).fill(-1);
+    var itemPos = Array.from({ length: K }, function () { return []; });
+
+    var distSq = function (idx1, idx2) {
+      var r1 = Math.floor(idx1 / cols);
+      var c1 = idx1 % cols;
+      var r2 = Math.floor(idx2 / cols);
+      var c2 = idx2 % cols;
+      var dr = r1 - r2;
+      var dc = c1 - c2;
+      return dr * dr + dc * dc;
+    };
+
+    // Step 1: Greedy electrostatic potential placement
+    for (var cell = 0; cell < N; cell++) {
+      var bestScore = -Infinity;
+      var bestCandidates = [];
+
+      for (var item = 0; item < K; item++) {
+        if (counts[item] <= 0) continue;
+        var positions = itemPos[item];
+        if (positions.length === 0) {
+          bestCandidates = [item];
+          bestScore = Infinity;
+          break;
+        }
+        var minDistSq = Infinity;
+        for (var pi = 0; pi < positions.length; pi++) {
+          var d2 = distSq(cell, positions[pi]);
+          if (d2 < minDistSq) minDistSq = d2;
+        }
+        if (minDistSq > bestScore) {
+          bestScore = minDistSq;
+          bestCandidates = [item];
+        } else if (minDistSq === bestScore) {
+          bestCandidates.push(item);
+        }
+      }
+
+      var chosenItem = bestCandidates[Math.floor(rand() * bestCandidates.length)];
+      grid[cell] = chosenItem;
+      counts[chosenItem]--;
+      itemPos[chosenItem].push(cell);
+    }
+
+    // Step 2: Steep repulsion energy penalty to eliminate close identical pairs
+    var pairEnergy = function (d2) {
+      if (d2 <= 1) return 1000000; // immediate orthogonal neighbor (dist 1)
+      if (d2 <= 2) return 500000; // immediate diagonal neighbor (dist ~1.414)
+      if (d2 <= 4) return 100000; // 2 steps away (dist 2)
+      if (d2 <= 5) return 50000; // knight move (dist ~2.236)
+      if (d2 <= 8) return 20000; // dist ~2.828
+      if (d2 <= 9) return 10000; // dist 3
+      if (d2 <= 13) return 3000; // dist ~3.6
+      if (d2 <= 16) return 1000; // dist 4
+      return 100 / d2;
+    };
+
+    var cellEnergy = function (cellIndex, itemIndex) {
+      var energy = 0;
+      var pos = itemPos[itemIndex];
+      for (var k = 0; k < pos.length; k++) {
+        var p = pos[k];
+        if (p === cellIndex) continue;
+        energy += pairEnergy(distSq(cellIndex, p));
+      }
+      return energy;
+    };
+
+    // Step 3: Local swap optimization to maximize distances
+    var iterations = Math.min(10000, N * 50);
+    for (var it = 0; it < iterations; it++) {
+      var c1 = Math.floor(rand() * N);
+      var c2 = Math.floor(rand() * N);
+      if (c1 === c2) continue;
+      var item1 = grid[c1];
+      var item2 = grid[c2];
+      if (item1 === item2) continue;
+
+      var currentE = cellEnergy(c1, item1) + cellEnergy(c2, item2);
+
+      var idx1InArr = itemPos[item1].indexOf(c1);
+      var idx2InArr = itemPos[item2].indexOf(c2);
+      itemPos[item1][idx1InArr] = c2;
+      itemPos[item2][idx2InArr] = c1;
+
+      var newE = cellEnergy(c1, item2) + cellEnergy(c2, item1);
+
+      if (newE <= currentE) {
+        grid[c1] = item2;
+        grid[c2] = item1;
+      } else {
+        // Revert
+        itemPos[item1][idx1InArr] = c1;
+        itemPos[item2][idx2InArr] = c2;
+      }
+    }
+
+    return grid.map(function (idx) { return items[idx]; });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Constants — DraggableGrid component defaults                        */
+  /* ------------------------------------------------------------------ */
+
+  var COLUMNS = 15;
+  var ROWS = 15;                 // square grid: rows === columns
+  var IMAGE_W = 200;
+  var IMAGE_H = 200;
+  var GAP = 5 * 4;               // control 0–100, ×4 → px  →  20px
+  var ROUNDED = 3;               // 0–20 on the short side
+  var RADIUS = (ROUNDED / 20) * (Math.min(IMAGE_W, IMAGE_H) / 2); // 15px
+  var GRID_W = COLUMNS * IMAGE_W + (COLUMNS - 1) * GAP; // 3280
+  var GRID_H = ROWS * IMAGE_H + (ROWS - 1) * GAP;       // 3280
+
+  var SEED = 0xc0ffee;
+  var CLICK_SLOP = 5;            // < 5px press = click, ≥ 5px = drag
+  var TIME_CONSTANT = 0.325;     // inertia decay, seconds
+  var REST_SPEED = 8;            // px/s — momentum stops below this
+  var MAX_SPEED = 5000;          // px/s sanity cap on flick velocity
+  var VELOCITY_WINDOW = 100;     // ms of pointer history used for velocity
+
+  var gallery = document.getElementById("gallery");
+  var gridEl = document.getElementById("grid");
+
+  /* ------------------------------------------------------------------ */
+  /* Build the 225 tiles                                                 */
+  /* ------------------------------------------------------------------ */
+
+  var displayItems = distribute2DGrid(ITEMS, COLUMNS, ROWS, SEED);
+
+  var frag = document.createDocumentFragment();
+  for (var index = 0; index < displayItems.length; index++) {
+    var item = displayItems[index];
+
+    var tile = document.createElement("div");
+    tile.className = "tile";
+    tile.style.borderRadius = RADIUS + "px";
+
+    var img = document.createElement("img");
+    img.src = item.src;
+    img.alt = item.alt;
+    img.draggable = false;
+    img.loading = index < 25 ? "eager" : "lazy";
+    img.addEventListener("error", function () {
+      // Match the React version: a failed image disappears and the dark
+      // placeholder tile remains.
+      if (this.parentNode) this.parentNode.removeChild(this);
+    });
+    tile.appendChild(img);
+
+    frag.appendChild(tile);
+  }
+  gridEl.appendChild(frag);
+
+  /* ------------------------------------------------------------------ */
+  /* Position + constraints                                              */
+  /* ------------------------------------------------------------------ */
+
+  var x = GAP;
+  var y = GAP;
+
+  var bounds = {
+    maxX: GAP,
+    maxY: GAP,
+    minX: GAP,
+    minY: GAP
+  };
+
+  function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function applyTransform() {
+    gridEl.style.transform =
+      "translate3d(" + x + "px, " + y + "px, 0)";
+  }
+
+  function measure() {
+    var rect = gallery.getBoundingClientRect();
+    var w = rect.width;
+    var h = rect.height;
+
+    // maxX/maxY: grid pinned `gap` from the top-left border.
+    // minX/minY: grid's far edge `gap` from the bottom-right border.
+    // When the grid is smaller than the container the range collapses to the
+    // top-left position, so it can't drift.
+    bounds.maxX = GAP;
+    bounds.maxY = GAP;
+    bounds.minX = Math.min(GAP, w - GRID_W - GAP);
+    bounds.minY = Math.min(GAP, h - GRID_H - GAP);
+
+    x = clamp(x, bounds.minX, bounds.maxX);
+    y = clamp(y, bounds.minY, bounds.maxY);
+    applyTransform();
+  }
+
+  // Pin the grid to the top-left corner — the only spacing is the gap.
+  measure();
+  x = bounds.maxX;
+  y = bounds.maxY;
+  applyTransform();
+
+  if (typeof ResizeObserver !== "undefined") {
+    var resizeObserver = new ResizeObserver(function () {
+      measure();
+    });
+    resizeObserver.observe(gallery);
+  } else {
+    window.addEventListener("resize", measure);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Drag + momentum                                                     */
+  /* ------------------------------------------------------------------ */
+
+  var pointer = null;       // active pointer session
+  var dragging = false;
+  var rafId = 0;
+  var lastFrameTime = 0;
+
+  function setDragging(value) {
+    dragging = value;
+    gallery.classList.toggle("is-dragging", value);
+  }
+
+  function stopMomentum() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+  }
+
+  function startMomentum(vx, vy) {
+    stopMomentum();
+
+    // Ignore a release with no real flick.
+    if (Math.abs(vx) < 1 && Math.abs(vy) < 1) return;
+
+    var px = x;
+    var py = y;
+    var velX = clamp(vx, -MAX_SPEED, MAX_SPEED);
+    var velY = clamp(vy, -MAX_SPEED, MAX_SPEED);
+    var startedAt = 0;
+
+    lastFrameTime = 0;
+
+    function tick(now) {
+      rafId = 0;
+      if (!startedAt) startedAt = now;
+
+      var dt = lastFrameTime ? (now - lastFrameTime) / 1000 : 1 / 60;
+      lastFrameTime = now;
+      if (dt < 0) dt = 0;
+      if (dt > 0.064) dt = 0.064; // tab was hidden / long frame
+
+      // Exact exponential decay: v(t) = v0 · e^(−t/τ)
+      var decay = Math.exp(-dt / TIME_CONSTANT);
+      px += velX * TIME_CONSTANT * (1 - decay);
+      py += velY * TIME_CONSTANT * (1 - decay);
+      velX *= decay;
+      velY *= decay;
+
+      // Clamp at the constraints; kill that axis' velocity at the wall.
+      if (px >= bounds.maxX) {
+        px = bounds.maxX;
+        velX = 0;
+      } else if (px <= bounds.minX) {
+        px = bounds.minX;
+        velX = 0;
+      }
+      if (py >= bounds.maxY) {
+        py = bounds.maxY;
+        velY = 0;
+      } else if (py <= bounds.minY) {
+        py = bounds.minY;
+        velY = 0;
+      }
+
+      x = px;
+      y = py;
+      applyTransform();
+
+      var speed = Math.sqrt(velX * velX + velY * velY);
+      if (speed > REST_SPEED && now - startedAt < 4000) {
+        rafId = requestAnimationFrame(tick);
+      }
+    }
+
+    rafId = requestAnimationFrame(tick);
+  }
+
+  // Velocity from the last ~100ms of pointer samples.
+  function sampleVelocity(samples) {
+    if (samples.length < 2) return { vx: 0, vy: 0 };
+
+    var last = samples[samples.length - 1];
+    var first = samples[0];
+    for (var i = 0; i < samples.length; i++) {
+      if (last.t - samples[i].t <= VELOCITY_WINDOW) {
+        first = samples[i];
+        break;
+      }
+    }
+
+    var dt = (last.t - first.t) / 1000;
+    if (dt <= 0.001) return { vx: 0, vy: 0 };
+
+    // Pointer was resting before release → no flick.
+    if (last.t - first.t < 1) return { vx: 0, vy: 0 };
+
+    return {
+      vx: (last.x - first.x) / dt,
+      vy: (last.y - first.y) / dt
+    };
+  }
+
+  function pushSample(samples, clientX, clientY, now) {
+    samples.push({ x: clientX, y: clientY, t: now });
+    while (samples.length > 2 && now - samples[0].t > 200) {
+      samples.shift();
+    }
+  }
+
+  function onPointerDown(event) {
+    if (pointer) return;
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+
+    stopMomentum();
+
+    var now = performance.now();
+    pointer = {
+      id: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: x,
+      originY: y,
+      moved: false,
+      samples: [{ x: event.clientX, y: event.clientY, t: now }]
+    };
+
+    try {
+      gallery.setPointerCapture(event.pointerId);
+    } catch (err) {
+      /* pointer capture is best-effort */
+    }
+  }
+
+  function onPointerMove(event) {
+    if (!pointer || event.pointerId !== pointer.id) return;
+
+    var now = performance.now();
+    pushSample(pointer.samples, event.clientX, event.clientY, now);
+
+    var dx = event.clientX - pointer.startX;
+    var dy = event.clientY - pointer.startY;
+
+    if (!pointer.moved) {
+      if (Math.sqrt(dx * dx + dy * dy) < CLICK_SLOP) return;
+      pointer.moved = true;
+      setDragging(true);
+    }
+
+    x = clamp(pointer.originX + dx, bounds.minX, bounds.maxX);
+    y = clamp(pointer.originY + dy, bounds.minY, bounds.maxY);
+    applyTransform();
+  }
+
+  function endPointer(event, cancelled) {
+    if (!pointer || event.pointerId !== pointer.id) return;
+
+    var session = pointer;
+    pointer = null;
+
+    try {
+      if (gallery.hasPointerCapture(event.pointerId)) {
+        gallery.releasePointerCapture(event.pointerId);
+      }
+    } catch (err) {
+      /* already released */
+    }
+
+    if (!session.moved) {
+      // Press moved < 5px → onItemClick (undefined on this page): no-op.
+      setDragging(false);
+      return;
+    }
+
+    setDragging(false);
+
+    if (!cancelled) {
+      pushSample(
+        session.samples,
+        event.clientX,
+        event.clientY,
+        performance.now()
+      );
+      var velocity = sampleVelocity(session.samples);
+      startMomentum(velocity.vx, velocity.vy);
+    }
+  }
+
+  function onPointerUp(event) {
+    endPointer(event, false);
+  }
+
+  function onPointerCancel(event) {
+    endPointer(event, true);
+  }
+
+  gallery.addEventListener("pointerdown", onPointerDown);
+  gallery.addEventListener("pointermove", onPointerMove);
+  gallery.addEventListener("pointerup", onPointerUp);
+  gallery.addEventListener("pointercancel", onPointerCancel);
+  window.addEventListener("blur", function () {
+    if (pointer) {
+      pointer = null;
+      setDragging(false);
+    }
+    stopMomentum();
+  });
+
+  // Native image/link dragging would fight the pointer drag.
+  gallery.addEventListener("dragstart", function (event) {
+    event.preventDefault();
+  });
+})();
+</script>
+</body>
+</html>
