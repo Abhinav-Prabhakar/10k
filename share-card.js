@@ -58,7 +58,7 @@ function posterPalette(hue){
   const surface = cssVar('--surface') || bg;
   const empty = cssVar('--cell-empty') || (dark ? '#1b1b1b' : '#f4f4f4');
   const faint = cssVar('--ink-faint') || (dark ? '#8d8d8d' : '#bdbdbd');
-  const muted = cssVar('--ink-muted') || (dark ? '#a8a8a8' : '#767676');
+  const muted = cssVar('--muted') || cssVar('--ink-muted') || (dark ? '#a8a8a8' : '#767676');
 
   const accentL = dark ? 64 : 52;
   const accentS = dark ? 62 : 55;
@@ -85,12 +85,14 @@ function posterPalette(hue){
 function currentSpec(){
   const h = HABITS[state.hi] || HABITS[0];
   const s = stats(h);
-  const nextIndex = MILESTONES.findIndex(m => s.total < m);
+  const list = milestonesFor(h);
+  const nextIndex = list.findIndex(m => s.total < m);
   return {
     name: h.name,
     hue: h.hue,
     target: h.target,
     total: s.total,
+    goal: s.skillGoal,
     sessions: s.sessions,
     first: s.first,
     pace: s.pace,
@@ -99,7 +101,8 @@ function currentSpec(){
     eta: s.eta,
     etaDays: s.etaDays,
     days: s.days,
-    achieved: MILESTONES.filter(m => s.total >= m).length,
+    milestones: list,
+    achieved: list.filter(m => s.total >= m).length,
     nextIndex: nextIndex,
     dateLabel: today.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}).toUpperCase(),
     since: s.first ? fmtMonYr(s.first) : null,
@@ -238,14 +241,14 @@ function drawEditorial(ctx, d, P){
   rr(ctx, M, barY, CW, 6, 3);
   ctx.fillStyle = P.line;
   ctx.fill();
-  const pct = Math.min(1, Math.max(0, d.total / 10000));
+  const pct = Math.min(1, Math.max(0, d.total / d.goal));
   const fillW = pct > 0 ? Math.max(6, CW * pct) : 0;
   if(fillW){
     rr(ctx, M, barY, fillW, 6, 3);
     ctx.fillStyle = P.accent;
     ctx.fill();
   }
-  micro(ctx, 'OF 10,000 H', M, 884, 24, 4.0, P.faint);
+  micro(ctx, `OF ${fmtInt(d.goal)} H`, M, 884, 24, 4.0, P.faint);
 
   /* graph */
   micro(ctx, 'PRACTICE', M, 990, 24, 4.2, P.faint);
@@ -299,13 +302,13 @@ function drawPlate(ctx, d, P){
   rr(ctx, barX, barY, barW, 5, 2.5);
   ctx.fillStyle = P.line;
   ctx.fill();
-  const pct = Math.min(1, Math.max(0, d.total / 10000));
+  const pct = Math.min(1, Math.max(0, d.total / d.goal));
   if(pct > 0){
     rr(ctx, barX, barY, Math.max(5, barW * pct), 5, 2.5);
     ctx.fillStyle = P.accent;
     ctx.fill();
   }
-  micro(ctx, 'OF 10,000 H', C, 918, 16, 2.6, P.faint, 'center');
+  micro(ctx, `OF ${fmtInt(d.goal)} H`, C, 918, 16, 2.6, P.faint, 'center');
 
   micro(ctx, 'PRACTICE', C, 1012, 17, 3.2, P.faint, 'center');
   drawMonths(ctx, M, 1056, CW, P, 'center');
@@ -391,9 +394,9 @@ function drawEditorialStats(ctx, d, P, M, CW){
   ctx.stroke();
 
   micro(ctx, d.nextMs !== null ? 'NEXT MILESTONE' : 'SUMMIT', x1, labelY, 24, 4.2, P.faint);
-  micro(ctx, `${fmtInt(d.nextMs !== null ? d.nextMs : 10000)} H`, x1 + colW, labelY, 20, 2.8, P.soft, 'right');
+  micro(ctx, `${fmtInt(d.nextMs !== null ? d.nextMs : d.goal)} H`, x1 + colW, labelY, 20, 2.8, P.soft, 'right');
 
-  const etaText = d.total >= 10000 ? '—' : (d.eta ? fmtMonYr(d.eta) : '—');
+  const etaText = d.total >= d.goal ? '—' : (d.eta ? fmtMonYr(d.eta) : '—');
   text(ctx, etaText, x1, valueY, 66, 200, P.ink, 'left', -2.4);
   drawEtaRuler(ctx, d, P, x1, 1412, colW);
 
@@ -418,8 +421,8 @@ function drawPlateStats(ctx, d, P, M, CW, labelY, valueY, evidenceY){
   ctx.stroke();
 
   micro(ctx, d.nextMs !== null ? 'NEXT MILESTONE' : 'SUMMIT', x1, labelY, 17, 3.0, P.faint);
-  micro(ctx, `${fmtInt(d.nextMs !== null ? d.nextMs : 10000)} H`, x1 + colW, labelY, 16, 2.2, P.soft, 'right');
-  text(ctx, d.total >= 10000 ? '—' : (d.eta ? fmtMonYr(d.eta) : '—'), x1, valueY, 54, 200, P.ink, 'left', -2);
+  micro(ctx, `${fmtInt(d.nextMs !== null ? d.nextMs : d.goal)} H`, x1 + colW, labelY, 16, 2.2, P.soft, 'right');
+  text(ctx, d.total >= d.goal ? '—' : (d.eta ? fmtMonYr(d.eta) : '—'), x1, valueY, 54, 200, P.ink, 'left', -2);
   drawEtaRuler(ctx, d, P, x1, evidenceY + 4, colW);
 
   micro(ctx, 'PACE', x2, labelY, 17, 3.0, P.faint);
@@ -486,16 +489,16 @@ function drawSpark(ctx, d, P, x, bottom, width, height){
 
 function drawMilestones(ctx, d, P, x, width, labelY, trackY, footY){
   micro(ctx, 'MILESTONES', x, labelY, 24, 4.2, P.faint);
-  micro(ctx, `${d.achieved} / ${MILESTONES.length}`, x + width, labelY, 24, 4.2, P.faint, 'right');
+  micro(ctx, `${d.achieved} / ${d.milestones.length}`, x + width, labelY, 24, 4.2, P.faint, 'right');
 
   const radius = 13.5;
   const first = x + radius + 3;
   const last = x + width - radius - 3;
-  const step = (last - first) / (MILESTONES.length - 1);
+  const step = (last - first) / (d.milestones.length - 1);
 
   rule(ctx, first, trackY, last - first, P.line, 2);
 
-  MILESTONES.forEach((threshold, i) => {
+  d.milestones.forEach((threshold, i) => {
     const cx = first + step * i;
     const achieved = d.total >= threshold;
     const next = i === d.nextIndex;
@@ -505,7 +508,7 @@ function drawMilestones(ctx, d, P, x, width, labelY, trackY, footY){
     ctx.fill();
 
     if(achieved){
-      drawMedal(ctx, cx, trackY, radius, P, i === MILESTONES.length - 1);
+      drawMedal(ctx, cx, trackY, radius, P, i === d.milestones.length - 1);
     } else if(next){
       disc(ctx, cx, trackY, radius - 1);
       ctx.fillStyle = P.bg;
@@ -514,7 +517,7 @@ function drawMilestones(ctx, d, P, x, width, labelY, trackY, footY){
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
-      const prev = i === 0 ? 0 : MILESTONES[i - 1];
+      const prev = i === 0 ? 0 : d.milestones[i - 1];
       const frac = Math.max(0, Math.min(1, (d.total - prev) / (threshold - prev)));
       if(frac > 0){
         ctx.strokeStyle = P.accent;
@@ -536,7 +539,7 @@ function drawMilestones(ctx, d, P, x, width, labelY, trackY, footY){
   });
 
   micro(ctx, '1', x, footY, 20, 2.0, P.faint);
-  micro(ctx, '10,000', x + width, footY, 20, 2.0, P.faint, 'right');
+  micro(ctx, fmtInt(d.goal), x + width, footY, 20, 2.0, P.faint, 'right');
 }
 
 function drawMedal(ctx, x, y, r, P, summit){

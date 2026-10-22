@@ -44,7 +44,7 @@
   content:"hold to share · ⇧↵";
   position:absolute;left:calc(100% + 14px);bottom:2px;
   font-size:9.5px;line-height:1;font-weight:300;letter-spacing:.04em;
-  color:var(--ink-muted,#767676);
+  color:var(--muted,#767676);
   white-space:nowrap;pointer-events:none;
   opacity:0;transform:translateX(-3px);
   transition:opacity .32s var(--ease-out,cubic-bezier(.2,.8,.2,1)),

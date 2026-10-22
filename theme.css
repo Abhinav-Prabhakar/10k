@@ -1,11 +1,11 @@
 /* ============================================================
-   10,000 HOURS — THEME LAYER (design.md §22)
+   10,000 HOURS — THEME LAYER (design.md §25)
    Loaded after the inline Console styles so light stays exactly
    as specified and dark is a token/class override, not a rewrite.
    ============================================================ */
 
 /* ------------------------------------------------------------
-   §22.2 TOKENS
+   §25.2 TOKENS
    The shared vocabulary future surfaces consume. Light values
    are the canonical §4.1 values; dark is tuned for contrast,
    never a pure inversion.
@@ -59,7 +59,7 @@
 }
 
 /* ------------------------------------------------------------
-   §22.3 DARK — the same product, after dark
+   §25.3 DARK — the same product, after dark
    Only colour changes. Hairlines stay hairlines, no cards,
    shadows, gradients or glass are introduced.
    ------------------------------------------------------------ */
@@ -286,7 +286,7 @@ html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
 [data-theme="dark"] :focus-visible{outline-color:var(--ink)!important}
 
 /* ------------------------------------------------------------
-   §22.4 THEME CONTROL
+   §25.4 THEME CONTROL
    One 24-box line glyph, quiet at rest, named on approach.
    Injected by theme.js into the header legend (index) and as a
    floating control (gallery); markup in the pages is untouched.
@@ -362,7 +362,7 @@ html[data-theme="dark"] body{background:var(--bg);color:var(--ink)}
 }
 
 /* ------------------------------------------------------------
-   §22.6 THEME TRANSITION
+   §25.6 THEME TRANSITION
    A 480ms circular reveal from the control (View Transitions),
    or a colour-only crossfade where the API is missing. The
    fallback class is only ever added by an explicit change, so
@@ -419,7 +419,7 @@ html.tenk-vt *::after{transition:none!important}
 .kbd-theme{font-size:9px;padding:0 4px;letter-spacing:0}
 
 /* ------------------------------------------------------------
-   §22.7 GALLERY
+   §25.7 GALLERY
    Dark stays near-black; light is paper. Photographs remain the
    only colour on the page.
    ------------------------------------------------------------ */
@@ -443,3 +443,24 @@ html[data-theme="light"]:has(body.gallery-page){background:#f7f7f6}
   border-color:#e2e2de;
 }
 [data-theme="light"] body.gallery-page .theme-btn{border-left-color:#e2e2de}
+
+/* ------------------------------------------------------------
+   §25.9 GALLERY ENTRY ON THE CONSOLE
+   The gallery control was added after the theme layer; keep its
+   resting and hover states on the same tokens as every other
+   quiet control. No new material.
+   ------------------------------------------------------------ */
+[data-theme="dark"] .gallery-link{
+  color:var(--muted);
+  border-color:var(--line-strong);
+  background:transparent;
+}
+[data-theme="dark"] .gallery-link:hover{
+  color:var(--ink);
+  background:var(--surface-hover);
+  border-color:var(--line-strong);
+}
+[data-theme="dark"] .gallery-link:focus-visible{outline-color:var(--ink)}
+[data-theme="light"] .gallery-link:focus-visible{outline-color:var(--ink)}
+[data-theme="dark"] .t-next{color:var(--muted)}
+[data-theme="dark"] .t-next::before{color:var(--ink-soft)}

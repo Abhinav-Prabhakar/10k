@@ -1222,17 +1222,17 @@ Two compositions were built and inspected. **Editorial** is canonical: left-alig
 
 The graph is the hero: 53 columns × 7 rows, `4px` gaps, `13.13px` cells in the §4.3 ramp on the skill hue, future days absent. Months are a `22px` tracked axis; colliding labels drop, and the current month is kept at the right edge so the year closes. A `2px` hairline at `1224` separates the graph from the two answers beneath it.
 
-ETA reads the **next milestone**, never 10,000 unless that is the next threshold: the label carries `NEXT MILESTONE` and the exact threshold, the value is `Mon YYYY`, and a ten-tick ruler places the dot by years. Pace is the `28-day mean`, with a 14-bar sparkline and a dashed target. Zero days are a neutral `2.5px` baseline, not a second accent rule. The cumulative bar keeps §6.9's 1%-per-100-hours mapping, so it is distance rather than a gauge.
+ETA reads the **next milestone**, never 10,000 unless that is the next threshold: the label carries `NEXT MILESTONE` and the exact threshold, the value is `Mon YYYY`, and a ten-tick ruler places the dot by years. Pace is the `28-day mean`, with a 14-bar sparkline and a dashed target. Zero days are a neutral `2.5px` baseline, not a second accent rule. The cumulative bar is proportional to the skill's own goal (§23), so it is distance rather than a gauge.
 
 ### 22.4 Palette
 
-The card reads the page at composition time with `getComputedStyle(document.documentElement)`: `--bg`, `--ink`, `--ink-soft`, `--line`, `--surface`, `--ink-faint`, `--cell-empty`. Missing values fall back to `#fff`, `#101010`, `#6b6b6b`, `#f1f1f1`, `#fff`, `#bdbdbd`, `#f4f4f4`. A background luminance below `0.45` selects the dark variant: dark hairlines and empty cells, a lighter cell ramp, and the skill hue at `62% 64%` for legibility.
+The card reads the page at composition time with `getComputedStyle(document.documentElement)`: `--bg`, `--ink`, `--ink-soft`, `--line`, `--surface`, `--muted`, `--cell-empty`. Missing values fall back to `#fff`, `#101010`, `#6b6b6b`, `#f1f1f1`, `#fff`, `#bdbdbd`, `#f4f4f4`. A background luminance below `0.45` selects the dark variant: dark hairlines and empty cells, a lighter cell ramp, and the skill hue at `62% 64%` for legibility.
 
 Neutral type and hairlines carry every word; the skill hue appears only in data ink — graph cells, bar fill, ETA dot, sparkline. Gold appears only in the milestone band, using §21's foil gradient, rim, inner ring and specular on achieved discs; the next disc is a hollow hairline with a hue progress arc between its neighbours; locked discs are hollow hairlines. No second accent, no gradients in the page itself, no decorative colour.
 
 ### 22.5 Copy, feedback, accessibility
 
-Micro labels, not sentences: `CURRENT SKILL`, `CUMULATIVE HOURS`, `OF 10,000 H`, `PRACTICE`, `53 WEEKS`, `NEXT MILESTONE`, `PACE`, `28-DAY MEAN`, `MILESTONES`, `n / 11`. The footer is `10k · one skill, one page`; no URL, QR, handle, or product pitch.
+Micro labels, not sentences: `CURRENT SKILL`, `CUMULATIVE HOURS`, `OF <goal> H`, `PRACTICE`, `53 WEEKS`, `NEXT MILESTONE`, `PACE`, `28-DAY MEAN`, `MILESTONES`, `n / <goal milestones>`. The footer is `10k · one skill, one page`; no URL, QR, handle, or product pitch.
 
 After download: `showToast('Share card saved · Piano')` and a polite live-region line — `Share card saved for Piano. 1080 by 1920 pixels.` A failure toasts `Could not save the card` and announces it. The heading is `tabindex="0"`, carries `aria-keyshortcuts="Shift+Enter"`, an `aria-label` naming the skill and both paths, and a `title`. Keyboard focus uses a `2px` outline in `--ink` at `6px`. The hold is never the only path.
 

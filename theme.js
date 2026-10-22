@@ -1,5 +1,5 @@
 /* ============================================================
-   10,000 HOURS — THEME ENGINE (design.md §22)
+   10,000 HOURS — THEME ENGINE (design.md §25)
    auto → light → dark → auto, persisted as `tenk.theme`.
    The inline boot script paints the first frame; this file owns
    the control, the shortcut, live system changes, and motion.

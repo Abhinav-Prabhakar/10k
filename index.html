@@ -469,6 +469,8 @@ body.dialog-open{overflow:hidden}
 .t-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:20px;min-height:12px}
 .t-label{display:flex;align-items:center;gap:6px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;color:#bdbdbd;font-weight:400;white-space:nowrap}
 .t-label svg{width:11px;height:11px;opacity:.75;flex:0 0 auto}
+.t-next{display:inline-flex;align-items:center;gap:4px;margin-left:1px;color:#8f8f8f;letter-spacing:.09em}
+.t-next::before{content:'→';font-size:10px;line-height:1;color:#c6c6c6;letter-spacing:0}
 .t-hint{font-size:9.5px;color:#c9c9c9;opacity:0;transform:translateY(-3px);transition:.32s cubic-bezier(.2,.8,.2,1);white-space:nowrap;font-weight:300}
 .tile:hover .t-hint{opacity:1;transform:none}
 
@@ -1359,7 +1361,7 @@ function metricsHTML1(h, s){
 
     <div class="tile">
       <div class="t-top">
-        <span class="t-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS.cal}</svg>ETA</span>
+        <span class="t-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS.cal}</svg>ETA${s.nextMs ? ` <span class="t-next">${fmtInt(s.nextMs)} h</span>` : ''}</span>
         <span class="t-hint">${s.complete ? `${fmtInt(s.skillGoal)} h reached` : (s.eta ? `next ${fmtInt(s.nextMs)} h · ${fmtInt(s.etaDays)} days` : 'no pace yet')}</span>
       </div>
       <div class="t-value"><span class="date">${s.eta ? fmtMonYr(s.eta) : '—'}</span></div>
