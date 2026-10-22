@@ -132,8 +132,20 @@ opens a command palette: type to fuzzy-find a skill or an action — `New skill�
 `Log today…`, start or stop the session, `Delete…`, `Keyboard shortcuts`, `Switch to…` — then arrow to
 it and press `Enter`. `?` opens the shortcut cheatsheet; `1`–`9` jump straight to a skill, `↑`/`↓`
 (or the rail's `←`/`→`) move between them, and `N`, `T`, `L`, `S`, `D` reach new-skill, retarget,
-log-today, the stopwatch, and delete. Single keys stay quiet while you are typing or while a surface is
-open, and `Esc` always closes the topmost one. No browser shortcut is overridden.
+log-today, the stopwatch, and delete. `⌘⇧L` (`Ctrl+Shift+L`) cycles the theme. Single keys stay quiet
+while you are typing or while a surface is open, and `Esc` always closes the topmost one. The theme
+chord is the one modifier combination the page intercepts; everything else passes through to the
+browser.
+
+### Theme
+
+The page opens in `auto`, following the system's light or dark preference. `⌘⇧L` / `Ctrl+Shift+L`, or
+the quiet glyph at the end of the header legend, cycles `auto → light → dark → auto`; the gallery has
+the same control at its bottom-right. The choice is remembered in `tenk.theme` and survives a reload.
+A theme change is a `480ms` circular reveal from the control, or a `380ms` colour crossfade where View
+Transitions are unavailable; both respect `prefers-reduced-motion`. Dark is the same instrument after
+dark — hairlines, no cards, one skill hue on data ink, gold only on the milestone row. The full token
+table lives in [`design.md` §22](./design.md#22-theming--auto-light-dark).
 
 ---
 
@@ -177,6 +189,7 @@ The short version:
 - Metric tiles separated by hairlines; a 1px black rule sweeps in on hover.
 - Detail revealed on hover, never required for comprehension.
 - Single easing curve: `cubic-bezier(.2,.8,.2,1)`.
+- Light, dark, and system-following themes from one token set; dark keeps every hairline and adds no cards.
 
 ---
 
@@ -189,10 +202,12 @@ This repository currently holds a **design prototype**, not a finished app.
   the file: the rail, the 42-icon add-skill dialog, the graph, the three metrics, the milestone row,
   the logger, the target slider, the press-and-hold stopwatch, the press-drag swipe that sets a day's
   hours, gesture-only skill deletion, and the `⌘K` command palette with its shortcut layer. Variants 2
-  and 3 have been removed.
+  and 3 have been removed. The theme layer is the only code outside the page:
+  [`theme.css`](./theme.css) and [`theme.js`](./theme.js), loaded by both HTML files.
 - Data is **seeded demo data**, generated deterministically in the browser. Logging works for the
-  session, but nothing is persisted yet; a running stopwatch is lost on reload. A skill created in
-  the dialog starts with an empty log.
+  session, but no practice data is persisted yet; a running stopwatch is lost on reload. A skill created
+  in the dialog starts with an empty log. (The theme preference is persisted separately, in
+  `tenk.theme`.)
 - [`design.md`](./design.md) — the canonical design system for everything built next. Its **§17
   Archive** keeps the reusable components from the retired variants (ring, pill nav, centered cards,
   sidebar list, mini bars, comparison rows) with full specifications.
@@ -204,6 +219,30 @@ Open `index.html` in a browser. That's it.
 ```
 open index.html
 ```
+
+The theme works from `file://` too, though some browsers restrict `localStorage` there; the choice then
+lasts for the session.
+
+### Hosting
+
+The site is served by **GitHub Pages from the `main` branch, root folder**:
+
+**<https://abhinav-prabhakar.github.io/10k/>**
+
+There is no build step and nothing to compile: Pages serves `index.html`, `gallery.html`, `design.md`,
+`reference.html`, `images/`, `theme.css`, and `theme.js` as they are. The empty [`.nojekyll`](./.nojekyll)
+file keeps Pages from running the files through Jekyll, so the underscore-free paths and assets are
+served verbatim.
+
+Deployment is just a push to `main` — no GitHub Actions, no deployment checks, no environment secrets.
+Vercel is retired for this project; there is no `vercel.json`, `CNAME`, or workflow file to maintain.
+The page is a static prototype, so there is no server, database, or API to configure.
+
+### Previewing a theme
+
+For screenshots and design review, `?theme=light`, `?theme=dark`, or `?theme=auto` overrides the saved
+preference for that load without persisting it. Any click on the theme control (or the shortcut) clears
+the override and stores a real preference.
 
 ---
 
@@ -237,8 +276,11 @@ gamified badges, AI coaching. The product's value is its quietness.
 .
 ├── index.html    # self-contained Console prototype (Variant 1 only)
 ├── gallery.html  # standalone port of the React Bits DraggableGrid hobby gallery
+├── theme.css     # theme tokens, dark overrides, control, transition, gallery paper mode
+├── theme.js      # theme engine: auto/light/dark, shortcut, circular reveal
 ├── images/       # 20 hobby images used by gallery.html
-├── design.md     # design system, tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones
+├── .nojekyll     # serve the site verbatim on GitHub Pages
+├── design.md     # design system, tokens, motion, semantics, §13.11 name→icon, §17 archive, §18 live session, §20 swipe, §21 milestones, §22 theming
 ├── reference.html
 └── README.md     # this file
 ```
