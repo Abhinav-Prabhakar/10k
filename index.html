@@ -2,13 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="color-scheme" content="light dark"/>
 <meta name="description" content="A local-first tracker for deliberate practice. One skill, one page, a year of days, and three quiet numbers: hours done, next-milestone ETA, and honest pace."/>
 <meta name="author" content="Abhinav Prabhakar"/>
 <link rel="canonical" href="https://abhinav-prabhakar.github.io/10k/"/>
 <meta name="theme-color" id="themeColor" content="#ffffff"/>
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff"/>
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b0b0c"/>
 <link rel="icon" href="favicon.svg" type="image/svg+xml"/>
+<link rel="mask-icon" href="favicon.svg" color="#7c3aed"/>
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <link rel="manifest" href="site.webmanifest"/>
@@ -53,6 +56,8 @@
   d.dataset.theme=theme;
   d.dataset.themePref=pref;
   try{ d.style.colorScheme=theme; }catch(e){}
+  var m=document.getElementById('themeColor');
+  if(m) m.content = theme==='dark'?'#0b0b0c':'#ffffff';
 })();
 </script>
 <title>10,000 Hours — Tracker</title>
