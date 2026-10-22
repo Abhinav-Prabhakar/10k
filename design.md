@@ -699,14 +699,14 @@ Typing picks the icon. Each of the 42 glyphs carries a lowercase vocabulary (`IC
 - Base reset, cell/legend styles; floating surfaces outside the view mount: `.tip`, `.logger`, `.runner`, `.toast`, `.backdrop` / `.dialog`.
 - Theme boot script in `<head>` (resolves `auto | light | dark` before the first paint), then `theme.css`; `theme.js` at the end of `<body>` owns the control, shortcut, live system changes, and the transition. No view or component code is theme-aware.
 - `.v1` console styles only; Variant 2/3 styles removed (§17).
-- `ICONS`, seeded demo data (`mulberry32`, `genLog`, `seedHabits`), `goalOf`/`milestonesFor`, `stats`, formatters; `graphHTML`, `metricsHTML1`, `view1`, `animateNumbers`, `revealBars`, `render`, `refreshMetrics`. `BOOT` hydrates from `TenkStore` before the first render; `saveState` is the single write path.
+- `ICONS`, starter habits (`seedHabits`), `goalOf`/`milestonesFor`, `stats`, formatters; `graphHTML`, `metricsHTML1`, `view1`, `animateNumbers`, `revealBars`, `render`, `refreshMetrics`. `BOOT` hydrates from `TenkStore` before the first render; `saveState` is the single write path.
 - Surfaces and machines: `openLogger`/`commit`/`closeLogger`, `openDialog`/`createSkill`/`closeDialog`, `openDeleteConfirm`/`deleteSkill`/`closeDeleteConfirm`, `startSession`/`tickSession`/`finishSession`/`discardSession`/`paintSessionCell` (pointer hold: `press`, `cancelArm`), `openPalette`/`paletteResults`/`fuzzyScore`/`runPaletteItem`/`closePalette`, `openKeys`, `ICON_KEYWORDS`/`normName`/`matchIconFor`/`applyIconMatch` and the `icon · …` line, `MILESTONES`/`milestonesHTML`/`refreshMilestones`; one delegated `keydown` map and the polite live region.
 
 ### 15.3 Porting to a component app
 
 - Move §4 tokens into `:root`; no literal hex values in components.
 - Variants 2 and 3 are gone; to revive an archived pattern, import the component only — never the retired shell (§17.4).
-- Seeded logs are demo-only and appear once, on first run; persisted habits use the same derived functions and `goalOf`. Never let a second store own a habit field.
+- Starter habits begin fresh with empty logs on first run; persisted habits use the same derived functions and `goalOf`. Never let a second store own a habit field.
 - Promote the logger to an accessible dialog with a touch focus trap and `aria-label`s.
 - Add hit-area padding at coarse pointers, and a `:focus-visible` underline in the input.
 - Keep count-up semantics: previous → next per habit and metric, `850ms`, cubic ease-out.
@@ -1369,8 +1369,8 @@ hydrates from it **before the first render**.
 | Key | `tenk.v1`; backups at `tenk.v1.backup`; theme stays at `tenk.theme`, untouched |
 | Version | `version: 1`; another version is treated as unreadable, not silently migrated |
 | Hydrate | `TenkStore.load()` → `{status: ok \| empty \| invalid \| unavailable}`; `ok` supplies habits and `hi` |
-| Seed | only when the key is absent; the deterministic demo is generated once and written back |
-| Corrupt | the raw payload is copied to `tenk.v1.backup`, then the demo is reseeded; the page never throws |
+| Seed | only when the key is absent; the starter habits are initialized once and written back |
+| Corrupt | the raw payload is copied to `tenk.v1.backup`, then starter habits are reseeded; the page never throws |
 | Validate | names trimmed to `40`; hue `0–360`; target `0.25–12`; goal positive; `createdAt` a local day key |
 | Logs | only `YYYY-MM-DD` keys with finite `> 0` values; minute precision; a day clamped to `24`; `0` deletes the key |
 | Migration | missing `goal` → `10000`; `micro: true` without a goal → `1000`; missing `createdAt` → today |
