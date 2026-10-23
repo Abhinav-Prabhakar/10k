@@ -1,11 +1,15 @@
 /* ============================================================
    10,000 Hours — Service Worker
    Enables offline-ready PWA installation across desktop (Windows,
-   macOS, Linux, ChromeOS) and mobile without in-app prompts.
+   macOS, Linux, ChromeOS) and mobile.
+   Other apps share this origin (abhinav-prabhakar.github.io), so
+   CacheStorage is shared too: only ever read or delete caches
+   that start with CACHE_PREFIX.
    ============================================================ */
 'use strict';
 
-const CACHE_NAME = 'tenk-v1';
+const CACHE_PREFIX = 'tenk-';
+const CACHE_NAME = CACHE_PREFIX + 'v2';
 
 const PRECACHE_ASSETS = [
   './',
@@ -68,7 +72,7 @@ self.addEventListener('activate', (event) => {
       caches.keys().then((keys) =>
         Promise.all(
           keys.map((key) => {
-            if (key !== CACHE_NAME) {
+            if (key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME) {
               return caches.delete(key);
             }
           })
@@ -100,11 +104,10 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(async () => {
-          const cached = await caches.match(req);
-          if (cached) return cached;
-          const fallback = await caches.match('./');
-          if (fallback) return fallback;
-          return caches.match('./index.html');
+          const cache = await caches.open(CACHE_NAME);
+          return (await cache.match(req)) ||
+            (await cache.match('./')) ||
+            cache.match('./index.html');
         })
     );
     return;
@@ -112,7 +115,7 @@ self.addEventListener('fetch', (event) => {
 
   // Static assets: stale-while-revalidate / cache with network update
   event.respondWith(
-    caches.match(req).then((cached) => {
+    caches.open(CACHE_NAME).then((cache) => cache.match(req)).then((cached) => {
       const fetchPromise = fetch(req)
         .then((res) => {
           if (res && res.status === 200) {
