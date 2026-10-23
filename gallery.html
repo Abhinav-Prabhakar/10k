@@ -1158,6 +1158,8 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('./sw.js').catch(function(){});
   });
 }
+/* no mini-infobar; install lives in the console's ⌘K palette */
+window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); });
 </script>
 </body>
 </html>
