@@ -53,6 +53,8 @@ Below it, three numbers:
 
 Pace includes the zeros on purpose. One heroic weekend should not be allowed to flatter the projection. The ETA is allowed to be disappointing; that is what makes it useful.
 
+The target reads in hours per week by default; hold the number and its unit to switch that skill to hours per day. Both steppers move in **15-minute increments**, so a week can be calibrated as precisely as a day.
+
 The milestone row is the only ornament. Eleven thresholds, struck gold when crossed. Nothing is awarded for showing up. Every card marks hours the graph already counts.
 
 ---

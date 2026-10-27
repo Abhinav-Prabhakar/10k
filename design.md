@@ -348,10 +348,10 @@ No visible box, focus ring, or label; date line and `h` supply context; keyboard
 | Panel | `224px` fixed; `#fff`, `1px solid #ececec`, radius `14px`, `--shadow-pop`, padding `13px 13px 10px` |
 | Position | centered below the target button, `10px` gap; flip above if it would cross the viewport; clamp axes to `10px` |
 | Enter motion | opacity `0→1`, `translateY(-4px) scale(.96)` → none, `160ms` |
-| Value | `26px/200`, tabular; unit `12px #c4c4c4`; weekly range `2–84`, step `1`; daily range `0.25–12`, step `0.25` |
+| Value | `26px/200`, tabular; unit `12px #c4c4c4`; weekly range `2–84`, step `0.25`; daily range `0.25–12`, slider step `0.01`, stepper `0.25` |
 | Unit | hours per week is the default read-out; the stored value stays hours/day. Hold the number **and its unit** `450ms` (or focus the pair and press `Enter`) to flip this skill only between `h/week` and `h/day`; each skill keeps its own unit in `tenk.v1` |
 | Slider | `2px #f1f1f1` track, `9px #111` thumb with `3px` white halo; `1px × 6px #efefef` ticks every day-equivalent hour |
-| Steppers | `26 × 26px`, radius `7px`, `#f7f7f7` → `#111`; `−`/`+` move `1h` weekly or `0.25h` daily; disabled at bounds |
+| Steppers | `26 × 26px`, radius `7px`, `#f7f7f7` → `#111`; `−`/`+` move `0.25h` (15 minutes) in either unit; disabled at bounds |
 | `save` | ghost `10px #767676` → `#111`; visible because a slider has no Enter key on touch |
 | Preview | dragging/stepping repaints cell levels and subline target live; metrics and sparkline update on save |
 | Save | click `save` or `Enter`; `refreshMetrics()`; announce `Target set to 21 hours per week.` |
@@ -548,7 +548,7 @@ r = hours / target
 | --- | --- | --- |
 | Total hours | integer, thousands separator | `1,284` |
 | Pace | 1 decimal | `1.4` |
-| Target | hours/week by default, 1 decimal; hours/day after a switch, 2 decimals | `21 h/week`, `3 h/day` |
+| Target | hours/week by default, 2 decimals (quarter-hour steps); hours/day after a switch, 2 decimals | `21.25 h/week`, `3 h/day` |
 | Ratio | 2 decimals + `×` | `1.42×` |
 | ETA | `Mon YYYY` | `Mar 2028` |
 | Day key / tooltip | `Mon D` | `Oct 21` |
@@ -647,7 +647,7 @@ The rail's add affordance (§6.1) is the only discovery point for a new skill; n
 2. Name field: borderless `26px/200`, `9px` uppercase label above, `1px #eee` underline → `#111` on focus; focused and selected on open; `Enter` creates. Required; errors `10.5px #c93a3a` below (`Enter a name.`, `That name is already in use.`), never a toast.
 3. Icon picker: 42 `40px` buttons (§6.2) in `repeat(auto-fill, 40px)`, `8px` gaps (`6px` at `≤520px`), `#cbcbcb` rest, `#111` selected with a `1.5px #111` ring, `12px` radius. `book` first and default; six and five columns on narrow screens, the dialog scrolls rather than clips. Typing pre-selects the best match and names it quietly below the field (§13.11).
 4. Hue picker: one `18px` circle per documented hue (§4.2) — four reserved first, then the five in use — in `28px` targets. Selected: `1.5px #111` outer ring, `2px` white gap. Default `45` (ochre).
-5. Target stepper: `− 21 h/week +`, `1` step `2–84` (or `− 3 h/day +`, `0.25` step `0.25–12` after a hold on the value), tabular, disabled at bounds; default `3` hours/day, read as `21` hours/week. Holding the number + unit sets the new skill's own unit; it never changes the page's skill.
+5. Target stepper: `− 21 h/week +`, `0.25` step `2–84` (or `− 3 h/day +`, `0.25` step `0.25–12` after a hold on the value), tabular, disabled at bounds; default `3` hours/day, read as `21` hours/week. Both units move in 15-minute increments. Holding the number + unit sets the new skill's own unit; it never changes the page's skill.
 6. Footer: ghost `cancel`, primary `create`, `12px` apart. `Esc`, `cancel`, backdrop click close without creating; focus starts in the name, trapped in the panel.
 7. On create: append a skill with `goal: 10000 | 1000`, `micro` matching the mode, an empty log, and `createdAt` today (no seeded hours), switch with `viewIn`, focus its rail button, announce `<name> added.` politely. Subline `No sessions logged yet · target 21 h/week` plus `· 1,000 h` in micro mode.
 

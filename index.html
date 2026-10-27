@@ -1193,9 +1193,9 @@ const milestonesFor = h => MILESTONES.filter(m => m <= goalOf(h));
 const DEFAULT_UNIT = 'week';
 const UNITS = {
   day:  {per:1, suffix:'h/day',  long:'hours per day',  label:'Daily target',
-         min:0.25, max:12, step:0.25, stepWord:'15 minutes'},
+         min:0.25, max:12, step:0.25, rangeStep:0.01, stepWord:'15 minutes'},
   week: {per:7, suffix:'h/week', long:'hours per week', label:'Weekly target',
-         min:2, max:84, step:1, stepWord:'1 hour'},
+         min:2, max:84, step:0.25, rangeStep:0.25, stepWord:'15 minutes'},
 };
 const isUnitKey = u => u === 'day' || u === 'week';
 const unitKey = h => isUnitKey(h && h.unit) ? h.unit : DEFAULT_UNIT;
@@ -1203,12 +1203,12 @@ const unitOf = h => UNITS[unitKey(h)];
 const otherOf = key => key === 'week' ? 'day' : 'week';
 
 const inUnit = (day, h) => day * unitOf(h).per;
-const fromUnit = (v, h) => v / unitOf(h).per;
+const fromUnit = (v, h) => Math.round((v / unitOf(h).per) * 1e6) / 1e6;
 
 /* whole hours per week, quarter hours per day — never "3.142857" */
 function fmtInUnit(day, h){
   const v = inUnit(day, h);
-  return String(unitKey(h) === 'week' ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100);
+  return String(Math.round(v * 100) / 100);
 }
 const targetText = (day, h) => `${fmtInUnit(day, h)} ${unitOf(h).suffix}`;
 const targetVerb = (day, h) => `${fmtInUnit(day, h)} ${unitOf(h).long}`;
@@ -1901,7 +1901,7 @@ function syncTargetChrome(day){
   targeter.setAttribute('aria-label', `Edit ${u.label.toLowerCase()}`);
   tgRange.min = String(u.min);
   tgRange.max = String(u.max);
-  tgRange.step = String(u.step);
+  tgRange.step = String(u.rangeStep || u.step);
   tgRange.setAttribute('aria-label', u.label);
   tgMinus.setAttribute('aria-label', `Decrease ${u.label.toLowerCase()} by ${u.stepWord}`);
   tgPlus.setAttribute('aria-label', `Increase ${u.label.toLowerCase()} by ${u.stepWord}`);
