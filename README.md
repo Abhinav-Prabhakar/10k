@@ -61,7 +61,7 @@ The milestone row is the only ornament. Eleven thresholds, struck gold when cros
 
 The gallery is the front door. Opening the app — the site root or the installed PWA — lands on the field of photographs; the console is one click away (`index.html?console`, or any skill tile).
 
-A visual index for the hobbies that could become practices. Twenty photographs, one draggable field. The skills you already track keep their colour and open their page. Everything else waits in greyscale, marked `soon`.
+A visual index for the hobbies that could become practices. Twenty-one photographs, one draggable field. The skills you already track keep their colour and open their page. Everything else waits in greyscale, marked `soon`.
 
 <table>
 <tr>

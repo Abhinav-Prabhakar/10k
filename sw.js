@@ -9,7 +9,7 @@
 'use strict';
 
 const CACHE_PREFIX = 'tenk-';
-const CACHE_NAME = CACHE_PREFIX + 'v4';
+const CACHE_NAME = CACHE_PREFIX + 'v5';
 
 const PRECACHE_ASSETS = [
   './',
@@ -28,6 +28,7 @@ const PRECACHE_ASSETS = [
   './icon-192.png',
   './icon-512.png',
   './images/piano.jpg',
+  './images/reading.jpg',
   './images/golfing.jpg',
   './images/chess.jpg',
   './images/cooking.jpg',
