@@ -60,6 +60,18 @@
   if(m) m.content = theme==='dark'?'#0b0b0c':'#ffffff';
 })();
 </script>
+<script>
+/* The library is the front door: a bare visit opens the hobby gallery.
+   Every console entry (deep links, ?console, ?skill=) is left alone. */
+(function(){
+  try{
+    if(location.search || location.hash) return;
+    if(/(?:^|\/)index\.html$/.test(location.pathname) || /\/$/.test(location.pathname)){
+      location.replace('gallery.html');
+    }
+  }catch(e){}
+})();
+</script>
 <title>10,000 Hours — Tracker</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -245,9 +257,16 @@ h1,h2,h3{font-weight:200}
   pointer-events:none;
 }
 .targeter.on{opacity:1;transform:none;pointer-events:auto}
-.tg-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#bdbdbd;font-weight:400;margin-bottom:8px}
+.tg-label{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#bdbdbd;font-weight:400;margin-bottom:8px}
+.tg-hold{font-size:8.5px;letter-spacing:.04em;text-transform:none;color:#d4d4d4;white-space:nowrap}
 .tg-value{display:flex;align-items:baseline;gap:5px;margin-bottom:8px}
-.tg-num{font-size:26px;font-weight:200;letter-spacing:-.03em;line-height:1;color:#111;font-variant-numeric:tabular-nums}
+.tg-num{
+  font-size:26px;font-weight:200;letter-spacing:-.03em;line-height:1;color:#111;font-variant-numeric:tabular-nums;
+  cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;
+  transition:opacity .16s ease,transform .16s ease;
+}
+.tg-num.is-holding{opacity:.45;transform:scale(.97)}
+.tg-num:focus-visible{outline:2px solid #111;outline-offset:2px;border-radius:4px}
 .tg-unit{font-size:12px;color:#c4c4c4}
 .tg-scale{position:relative;height:22px;margin-bottom:3px}
 .tg-ticks{position:absolute;inset:0;pointer-events:none}
@@ -904,18 +923,18 @@ body.dialog-open{overflow:hidden}
   </div>
 </div>
 
-<!-- daily target -->
-<div class="targeter" id="targeter" role="dialog" aria-label="Edit daily target" hidden>
-  <div class="tg-label">Daily target</div>
-  <div class="tg-value"><span class="tg-num" id="tgNum">3</span><span class="tg-unit">h/day</span></div>
+<!-- target, in hours per day or per week -->
+<div class="targeter" id="targeter" role="dialog" aria-label="Edit target" hidden>
+  <div class="tg-label"><span id="tgLabel">Weekly target</span><span class="tg-hold" id="tgHold">hold for h/day</span></div>
+  <div class="tg-value"><span class="tg-num" id="tgNum" role="button" tabindex="0">21</span><span class="tg-unit" id="tgUnit">h/week</span></div>
   <div class="tg-scale">
     <div class="tg-ticks" id="tgTicks" aria-hidden="true"></div>
-    <input class="tg-range" id="tgRange" type="range" min="0.25" max="12" step="0.25" value="3" aria-label="Daily target" aria-valuetext="3 hours per day"/>
+    <input class="tg-range" id="tgRange" type="range" min="2" max="84" step="1" value="21" aria-label="Weekly target" aria-valuetext="21 hours per week"/>
   </div>
   <div class="tg-foot">
     <div class="tg-steps">
-      <button class="tg-step" id="tgMinus" type="button" aria-label="Decrease daily target by 15 minutes">−</button>
-      <button class="tg-step" id="tgPlus" type="button" aria-label="Increase daily target by 15 minutes">+</button>
+      <button class="tg-step" id="tgMinus" type="button" aria-label="Decrease weekly target by 1 hour">−</button>
+      <button class="tg-step" id="tgPlus" type="button" aria-label="Increase weekly target by 1 hour">+</button>
     </div>
     <button class="tg-save" id="tgSave" type="button" title="Save target (Enter)" aria-keyshortcuts="Enter">save</button>
   </div>
@@ -972,9 +991,9 @@ body.dialog-open{overflow:hidden}
     <div class="dlg-row">
       <span class="dlg-label" id="dlgTargetLabel">Target</span>
       <div class="stepper" role="group" aria-labelledby="dlgTargetLabel">
-        <button class="step-btn" id="dlgMinus" type="button" aria-label="Decrease daily target">−</button>
-        <span class="step-val"><span id="dlgTarget">3</span><span class="step-unit">h/day</span></span>
-        <button class="step-btn" id="dlgPlus" type="button" aria-label="Increase daily target">+</button>
+        <button class="step-btn" id="dlgMinus" type="button" aria-label="Decrease target">−</button>
+        <span class="step-val"><span id="dlgTarget">21</span><span class="step-unit" id="dlgUnit">h/week</span></span>
+        <button class="step-btn" id="dlgPlus" type="button" aria-label="Increase target">+</button>
       </div>
     </div>
 
@@ -1032,7 +1051,7 @@ body.dialog-open{overflow:hidden}
         <div class="keys-list">
           <div class="keys-row"><span class="keys-keys"><kbd class="kbd">N</kbd></span><span class="keys-label">new skill</span></div>
           <div class="keys-row"><span class="keys-keys"><kbd class="kbd" id="keysMicro">⌘⇧N</kbd></span><span class="keys-label">new microskill</span></div>
-          <div class="keys-row"><span class="keys-keys"><kbd class="kbd">T</kbd></span><span class="keys-label">edit daily target</span></div>
+          <div class="keys-row"><span class="keys-keys"><kbd class="kbd">T</kbd></span><span class="keys-label">edit target</span></div>
           <div class="keys-row"><span class="keys-keys"><kbd class="kbd">D</kbd></span><span class="keys-label">delete current skill</span></div>
         </div>
       </section>
@@ -1246,7 +1265,6 @@ function stats(h){
    FORMATTERS
    ============================================================ */
 const fmtInt = v => Math.round(v).toLocaleString('en-US');
-const fmtTarget = v => String(Math.round(v * 100) / 100);
 const fmtMonYr = d => `${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 const pad2 = n => String(n).padStart(2,'0');
 const parseKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d); };
@@ -1370,7 +1388,7 @@ function metricsHTML1(h, s){
     <div class="tile">
       <div class="t-top">
         <span class="t-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS.pulse}</svg>Pace</span>
-        <span class="t-hint">${s.ratio.toFixed(2)}× target · ${h.target}h/day</span>
+        <span class="t-hint">${s.ratio.toFixed(2)}× target · ${targetText(h.target)}</span>
       </div>
       <div class="t-value"><span class="num" data-num="pace" data-to="${s.pace}" data-dec="1">0</span><span class="t-unit">h/day</span></div>
       ${sparkHTML(h, s)}
@@ -1529,7 +1547,7 @@ function view1(h){
       <header class="head">
         <div>
           <h1>${h.name}</h1>
-          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit daily target, ${fmtTarget(h.target)} h/day">${fmtTarget(h.target)} h/day</button></p>
+          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit target, ${targetVerb(h.target)}">${targetText(h.target)}</button></p>
         </div>
         <div class="head-right">
           <div class="head-tools">
@@ -1768,10 +1786,39 @@ logger.addEventListener('click', e=>{
 /* ============================================================
    TARGET EDITOR — tap the target in the subline
    ============================================================ */
-const TARGET_MIN = 0.25, TARGET_MAX = 12, TARGET_STEP = 0.25;
+const TARGET_MIN = 0.25, TARGET_MAX = 12;
+
+/* The target is stored as hours per day, but it is read back in hours per
+   week by default. Holding the number in the editor flips the unit. */
+const UNIT_KEY = 'tenk.unit';
+const UNITS = {
+  day:  {per:1, suffix:'h/day',  long:'hours per day',  label:'Daily target',
+         min:0.25, max:12, step:0.25, stepWord:'15 minutes'},
+  week: {per:7, suffix:'h/week', long:'hours per week', label:'Weekly target',
+         min:2, max:84, step:1, stepWord:'1 hour'},
+};
+let targetUnit = (()=>{
+  try{ return localStorage.getItem(UNIT_KEY) === 'day' ? 'day' : 'week'; }
+  catch(_){ return 'week'; }
+})();
+const unitOf = () => UNITS[targetUnit];
+const otherUnit = () => targetUnit === 'week' ? 'day' : 'week';
+const inUnit = day => day * unitOf().per;
+const fromUnit = v => v / unitOf().per;
+
+/* whole hours per week, quarter hours per day — never "3.142857" */
+function fmtInUnit(day){
+  const v = inUnit(day);
+  return String(targetUnit === 'week' ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100);
+}
+const targetText = day => `${fmtInUnit(day)} ${unitOf().suffix}`;
+const targetVerb = day => `${fmtInUnit(day)} ${unitOf().long}`;
 
 const targeter = document.getElementById('targeter');
+const tgLabel = document.getElementById('tgLabel');
+const tgHold = document.getElementById('tgHold');
 const tgNum = document.getElementById('tgNum');
+const tgUnit = document.getElementById('tgUnit');
 const tgRange = document.getElementById('tgRange');
 const tgTicks = document.getElementById('tgTicks');
 const tgMinus = document.getElementById('tgMinus');
@@ -1779,11 +1826,17 @@ const tgPlus = document.getElementById('tgPlus');
 const tgSave = document.getElementById('tgSave');
 let targetEdit = null, targetTimer = null;
 
-tgTicks.innerHTML = Array.from({length:11}, (_,i)=>{
-  const v = i + 1;
-  const left = ((v - TARGET_MIN) / (TARGET_MAX - TARGET_MIN)) * 100;
-  return `<i style="left:${left.toFixed(2)}%"></i>`;
-}).join('');
+function paintTicks(){
+  const u = unitOf();
+  const out = [];
+  for(let i=1;i<=11;i++){
+    const v = i * u.per;
+    if(v > u.max) break;
+    const left = ((v - u.min) / (u.max - u.min)) * 100;
+    out.push(`<i style="left:${left.toFixed(2)}%"></i>`);
+  }
+  tgTicks.innerHTML = out.join('');
+}
 
 function paintTarget(habit, v){
   habit.target = v;
@@ -1793,25 +1846,98 @@ function paintTarget(habit, v){
   });
   const btn = document.getElementById('targetBtn');
   if(btn){
-    btn.textContent = `${fmtTarget(v)} h/day`;
-    btn.setAttribute('aria-label', `Edit daily target, ${fmtTarget(v)} h/day`);
+    btn.textContent = targetText(v);
+    btn.setAttribute('aria-label', `Edit target, ${targetVerb(v)}`);
   }
 }
 
 function syncTargetSteps(v){
-  tgMinus.disabled = v <= TARGET_MIN;
-  tgPlus.disabled = v >= TARGET_MAX;
+  const u = unitOf();
+  tgMinus.disabled = v <= u.min + 1e-9;
+  tgPlus.disabled = v >= u.max - 1e-9;
 }
 
 function previewTarget(v){
   if(!targetEdit) return;
-  v = Math.min(TARGET_MAX, Math.max(TARGET_MIN, Math.round(v * 100) / 100));
-  tgNum.textContent = fmtTarget(v);
+  const u = unitOf();
+  v = Math.min(u.max, Math.max(u.min, Math.round(v * 100) / 100));
+  const day = fromUnit(v);
+  tgNum.textContent = fmtInUnit(day);
   tgRange.value = String(v);
-  tgRange.setAttribute('aria-valuetext', `${fmtTarget(v)} hours per day`);
+  tgRange.setAttribute('aria-valuetext', targetVerb(day));
   syncTargetSteps(v);
-  paintTarget(targetEdit.habit, v);
+  paintTarget(targetEdit.habit, day);
 }
+
+/* the editor's chrome follows the unit, without touching the value */
+function syncTargetChrome(day){
+  const u = unitOf();
+  tgLabel.textContent = u.label;
+  tgUnit.textContent = u.suffix;
+  tgHold.textContent = `hold for ${UNITS[otherUnit()].suffix}`;
+  targeter.setAttribute('aria-label', `Edit ${u.label.toLowerCase()}`);
+  tgRange.min = String(u.min);
+  tgRange.max = String(u.max);
+  tgRange.step = String(u.step);
+  tgRange.setAttribute('aria-label', u.label);
+  tgMinus.setAttribute('aria-label', `Decrease ${u.label.toLowerCase()} by ${u.stepWord}`);
+  tgPlus.setAttribute('aria-label', `Increase ${u.label.toLowerCase()} by ${u.stepWord}`);
+  tgNum.setAttribute('aria-label', `${targetVerb(day)}. Hold, or press Enter, to switch to ${UNITS[otherUnit()].long}.`);
+  paintTicks();
+}
+
+function applyUnitToEditor(day){
+  syncTargetChrome(day);
+  const v = inUnit(day);
+  tgRange.value = String(v);
+  tgNum.textContent = fmtInUnit(day);
+  tgRange.setAttribute('aria-valuetext', targetVerb(day));
+  syncTargetSteps(v);
+}
+
+function switchTargetUnit(){
+  targetUnit = otherUnit();
+  try{ localStorage.setItem(UNIT_KEY, targetUnit); }catch(_){}
+  const hop = targetEdit ? targetEdit.habit : state.habit;
+  if(targetEdit) applyUnitToEditor(hop.target);
+  paintTarget(hop, hop.target);
+  refreshMetrics();
+  if(targetEdit && state.session && state.session.hi === state.hi) tickSession();
+  announce(`Target shown in ${unitOf().long}.`);
+}
+
+/* long press the number — 450ms, cancelled by travel or release */
+const NUM_HOLD_MS = 450;
+let numHold = null;
+function cancelNumHold(){
+  if(numHold){
+    clearTimeout(numHold.timer);
+    numHold = null;
+  }
+  tgNum.classList.remove('is-holding');
+}
+tgNum.addEventListener('pointerdown', e=>{
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  cancelNumHold();
+  try{ tgNum.setPointerCapture(e.pointerId); }catch(_){}
+  tgNum.classList.add('is-holding');
+  numHold = {x:e.clientX, y:e.clientY, timer:setTimeout(()=>{
+    numHold = null;
+    tgNum.classList.remove('is-holding');
+    switchTargetUnit();
+  }, NUM_HOLD_MS)};
+});
+tgNum.addEventListener('pointermove', e=>{
+  if(!numHold) return;
+  if(Math.abs(e.clientX - numHold.x) > 8 || Math.abs(e.clientY - numHold.y) > 8) cancelNumHold();
+});
+['pointerup','pointercancel','pointerleave'].forEach(t=>tgNum.addEventListener(t, cancelNumHold));
+tgNum.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); switchTargetUnit(); }
+});
+
+/* the hidden editor starts in the reader's unit, so the first open is instant */
+syncTargetChrome(state.habit.target);
 
 function positionTargeter(btn){
   const r = btn.getBoundingClientRect();
@@ -1830,10 +1956,7 @@ function openTargetEditor(btn){
   closeLogger();
   const h = state.habit;
   targetEdit = {habit:h, original:h.target, btn};
-  tgNum.textContent = fmtTarget(h.target);
-  tgRange.value = String(h.target);
-  tgRange.setAttribute('aria-valuetext', `${fmtTarget(h.target)} hours per day`);
-  syncTargetSteps(h.target);
+  applyUnitToEditor(h.target);
 
   targeter.hidden = false;
   targeter.classList.remove('on');
@@ -1863,7 +1986,7 @@ function closeTargetEditor(opts){
 function commitTarget(){
   if(!targetEdit) return;
   const t = targetEdit;
-  const v = parseFloat(tgRange.value);
+  const v = fromUnit(parseFloat(tgRange.value));
   paintTarget(t.habit, v);
   closeTargetEditor({keep:true});
   if(state.habit === t.habit){
@@ -1871,12 +1994,12 @@ function commitTarget(){
     if(state.session && state.session.hi === state.hi) tickSession();
   }
   saveState();
-  announce(`Daily target set to ${fmtTarget(v)} hours.`);
+  announce(`Target set to ${targetVerb(v)}.`);
 }
 
 tgRange.addEventListener('input', ()=>previewTarget(parseFloat(tgRange.value)));
-tgMinus.addEventListener('click', ()=>previewTarget(parseFloat(tgRange.value) - TARGET_STEP));
-tgPlus.addEventListener('click', ()=>previewTarget(parseFloat(tgRange.value) + TARGET_STEP));
+tgMinus.addEventListener('click', ()=>previewTarget(parseFloat(tgRange.value) - unitOf().step));
+tgPlus.addEventListener('click', ()=>previewTarget(parseFloat(tgRange.value) + unitOf().step));
 tgSave.addEventListener('click', commitTarget);
 
 targeter.addEventListener('keydown', e=>{
@@ -1898,6 +2021,7 @@ const dlgMatch = document.getElementById('dlgMatch');
 const dlgIcons = document.getElementById('dlgIcons');
 const dlgHues = document.getElementById('dlgHues');
 const dlgTarget = document.getElementById('dlgTarget');
+const dlgUnit = document.getElementById('dlgUnit');
 const dlgMinus = document.getElementById('dlgMinus');
 const dlgPlus = document.getElementById('dlgPlus');
 const dlgCreate = document.getElementById('dlgCreate');
@@ -2153,14 +2277,19 @@ function syncPickers(){
 }
 
 function syncTarget(){
-  dlgTarget.textContent = String(dlgState.target);
-  dlgMinus.disabled = dlgState.target <= TARGET_MIN;
-  dlgPlus.disabled = dlgState.target >= TARGET_MAX;
+  const u = unitOf();
+  dlgTarget.textContent = fmtInUnit(dlgState.target);
+  dlgUnit.textContent = u.suffix;
+  dlgMinus.disabled = dlgState.target <= TARGET_MIN + 1e-9;
+  dlgPlus.disabled = dlgState.target >= TARGET_MAX - 1e-9;
+  dlgMinus.setAttribute('aria-label', `Decrease target by ${u.stepWord}`);
+  dlgPlus.setAttribute('aria-label', `Increase target by ${u.stepWord}`);
 }
 
 function bumpTarget(dir){
-  const next = dlgState.target + dir * TARGET_STEP;
-  dlgState.target = Math.min(TARGET_MAX, Math.max(TARGET_MIN, Math.round(next * 100) / 100));
+  const u = unitOf();
+  const shown = Math.min(u.max, Math.max(u.min, inUnit(dlgState.target) + dir * u.step));
+  dlgState.target = Math.min(TARGET_MAX, Math.max(TARGET_MIN, fromUnit(shown)));
   syncTarget();
 }
 
@@ -2709,7 +2838,7 @@ function paletteItems(){
   [
     {kind:'new',     name:'New skill…',          hint:'N', search:'new skill add create'},
     {kind:'newmicro', name:'New microskill…',    hint: isMac ? '⌘⇧N' : 'Ctrl⇧N', search:'new microskill micro add create 1000 thousand shorter horizon'},
-    {kind:'target',  name:'Edit daily target…',  hint:'T', search:'edit daily target goal hours'},
+    {kind:'target',  name:'Edit target…',  hint:'T', search:'edit target goal hours daily weekly'},
     {kind:'log',     name:'Log today…',          hint:'L', search:'log today hours enter'},
     {kind:'session', name: state.session ? 'Stop session' : 'Start session',
                      hint:'S', search:'start stop session timer stopwatch time'},

@@ -34,7 +34,7 @@ Variant 1: two-column shell — fixed icon rail + centered canvas.
 ┌──────┬──────────────────────────────────────────────────────────────┐
 │      │                                                              │
 │  ◉   │   Piano                                                      │
-│  ○   │   Tracking since Jan 2025 · target 3 h/day        less ▪▪▪▪ more
+│  ○   │   Tracking since Jan 2025 · target 21 h/week       less ▪▪▪▪ more
 │  ○   │                                                              │
 │  ○   │   Jan   Feb   Mar   Apr   May   Jun   Jul   Aug   Sep        │
 │  ○   │   ░░░░ ░▓░░ ░░░▓ ░░░░ ░▓▓░ ░░░░ ░░░▓ ░░░░ ░▓░░ ░░░░          │
@@ -282,7 +282,7 @@ Paths in `ICONS`; picker order = `ICON_CHOICES`, `book` first (default). Functio
   <div>
     <h1>Piano</h1>
     <p class="hsub">Tracking since <b>Jan 2025</b> · target
-      <button class="hsub-target" type="button">3 h/day</button></p>
+      <button class="hsub-target" type="button">21 h/week</button></p>
   </div>
   <div class="legend">less ▪▪▪▪▪ more</div>
 </header>
@@ -292,7 +292,7 @@ Paths in `ICONS`; picker order = `ICON_CHOICES`, `book` first (default). Functio
 
 Subline: metadata, not a sentence — values in `<b>`, weight `300`, `#7a7a7a`, separators `·`. Target: the one editable value — borderless `<button>`, same size/weight as the meta, `1px #ececec` bottom rule, hover/focus `#111` text and rule, opens the target editor (§6.7). Legend `9px`, uppercase, `0.09em`, `#c8c8c8`; swatches `11px`, cells' radius and ramp; `less`/`more` flank them, `3px` side margins.
 
-Empty subline `No sessions logged yet · target 3 h/day`; target stays visible for calibration, never blank, header keeps its height. Hold hint (§18, §20): below the legend, right-aligned, `9.5px/300`, `#767676`, removed after the first live session or first scrub.
+Empty subline `No sessions logged yet · target 21 h/week`; target stays visible for calibration, never blank, header keeps its height. The unit follows the last choice in the target editor (§6.7): hours/week by default, hours/day on hold. Hold hint (§18, §20): below the legend, right-aligned, `9.5px/300`, `#767676`, removed after the first live session or first scrub.
 
 ### 6.4 Contribution graph
 
@@ -341,21 +341,22 @@ Only text-entry surface: a calculation, not a form. Order: date line (`TUE, OCT 
 
 No visible box, focus ring, or label; date line and `h` supply context; keyboard focus is exposed via the dialog's accessible name.
 
-**Target editor.** Tapping the subline target opens a smaller anchored editor: slider + quarter-hour steppers, not text — calibration, not logging. Same surface and motion as the logger. Label `DAILY TARGET` `10px/400/.1em/#bdbdbd`.
+**Target editor.** Tapping the subline target opens a smaller anchored editor: slider + quarter-hour steppers, not text — calibration, not logging. Same surface and motion as the logger. Label is the current unit — `WEEKLY TARGET` by default, `DAILY TARGET` after a switch — `10px/400/.1em/#bdbdbd`, with `hold for h/day` on the right `8.5px #d4d4d4`.
 
 | Property | Spec |
 | --- | --- |
 | Panel | `224px` fixed; `#fff`, `1px solid #ececec`, radius `14px`, `--shadow-pop`, padding `13px 13px 10px` |
 | Position | centered below the target button, `10px` gap; flip above if it would cross the viewport; clamp axes to `10px` |
 | Enter motion | opacity `0→1`, `translateY(-4px) scale(.96)` → none, `160ms` |
-| Value | `26px/200`, tabular; unit `12px #c4c4c4`; range `0.25–12`, step `0.25` |
-| Slider | `2px #f1f1f1` track, `9px #111` thumb with `3px` white halo; `1px × 6px #efefef` ticks at whole hours |
-| Steppers | `26 × 26px`, radius `7px`, `#f7f7f7` → `#111`; `−`/`+` move `0.25h`; disabled at bounds |
+| Value | `26px/200`, tabular; unit `12px #c4c4c4`; weekly range `2–84`, step `1`; daily range `0.25–12`, step `0.25` |
+| Unit | hours per week is the default read-out; the stored value stays hours/day. Hold the number `450ms` (or focus it and press `Enter`) to flip `h/week` ↔ `h/day`; the choice persists under `tenk.unit` |
+| Slider | `2px #f1f1f1` track, `9px #111` thumb with `3px` white halo; `1px × 6px #efefef` ticks every day-equivalent hour |
+| Steppers | `26 × 26px`, radius `7px`, `#f7f7f7` → `#111`; `−`/`+` move `1h` weekly or `0.25h` daily; disabled at bounds |
 | `save` | ghost `10px #767676` → `#111`; visible because a slider has no Enter key on touch |
 | Preview | dragging/stepping repaints cell levels and subline target live; metrics and sparkline update on save |
-| Save | click `save` or `Enter`; `refreshMetrics()`; announce `Daily target set to 3.5 hours.` |
+| Save | click `save` or `Enter`; `refreshMetrics()`; announce `Target set to 21 hours per week.` |
 | Cancel | `Esc`, click-away, or clicking the target restores the previous target and cell levels; focus returns to the button |
-| Keyboard | range focused on open; arrow keys adjust; `Enter` saves; `Esc` cancels |
+| Keyboard | range focused on open; arrow keys adjust; `Enter` saves; `Esc` cancels; `Enter` on the number switches units |
 | Interactions | logger and target editor close each other; skill switch, scroll, resize close it without saving |
 
 Two controls, not a modal: one continuous scale, one stepper pair. No presets, no text field, no second save path.
@@ -381,7 +382,7 @@ Three tiles, one row, hairlines between, answering in order: **how much**, **how
 | --- | --- | --- | --- | --- |
 | Cumulative | clock | total hours, `0` decimals | 2px progress bar to 10,000 | `N sessions · since Mon YYYY` |
 | ETA | calendar | `Mon YYYY` or `—` | 0–10-year ruler with accent dot | `next N h · N days` / `no pace yet` |
-| Pace | pulse | h/day, `1` decimal | 14-day sparkline with dashed target line | `1.42× target · 3 h/day` |
+| Pace | pulse | h/day, `1` decimal | 14-day sparkline with dashed target line | `1.42× target · 21 h/week` |
 
 A fourth metric goes below (§13.4) or replaces a tile — never a 2×2 grid. The triad is a composition, not a container.
 
@@ -546,6 +547,7 @@ r = hours / target
 | --- | --- | --- |
 | Total hours | integer, thousands separator | `1,284` |
 | Pace | 1 decimal | `1.4` |
+| Target | hours/week by default, 1 decimal; hours/day after a switch, 2 decimals | `21 h/week`, `3 h/day` |
 | Ratio | 2 decimals + `×` | `1.42×` |
 | ETA | `Mon YYYY` | `Mar 2028` |
 | Day key / tooltip | `Mon D` | `Oct 21` |
@@ -568,7 +570,7 @@ The interface speaks in labels, not sentences. Lowercase in controls, title case
 - Hold hint `hold a day to time it · drag to set hours`; logger footer `clear` · `timer` · `↵ log · esc`; quick adds `+½` · `+1` · `+2`.
 - Session bar `Piano · Oct 21` · `log` · `discard`; toast `1 min logged · Piano, Oct 21`; announcement `Stopwatch started for Piano, October 21.`
 - Delete `Delete Piano?` · `42 sessions · 531 h will be removed.` · `cancel` · `delete`; guard `Keep at least one skill.`
-- Subline `Tracking since Jan 2025 · target 3 h/day`; empty `No sessions logged yet` · `no pace yet`; tooltip empty `Oct 21 · —`.
+- Subline `Tracking since Jan 2025 · target 21 h/week`; empty `No sessions logged yet` · `no pace yet`; tooltip empty `Oct 21 · —`.
 - Separators `·`, single spaces; ellipses `…`; dashes `—`, never `--`; no exclamation marks, motivational copy, or emoji; the unit always separate, never part of the value; errors specific: `Enter between 0 and 24 hours.`
 ---
 
@@ -644,9 +646,9 @@ The rail's add affordance (§6.1) is the only discovery point for a new skill; n
 2. Name field: borderless `26px/200`, `9px` uppercase label above, `1px #eee` underline → `#111` on focus; focused and selected on open; `Enter` creates. Required; errors `10.5px #c93a3a` below (`Enter a name.`, `That name is already in use.`), never a toast.
 3. Icon picker: 42 `40px` buttons (§6.2) in `repeat(auto-fill, 40px)`, `8px` gaps (`6px` at `≤520px`), `#cbcbcb` rest, `#111` selected with a `1.5px #111` ring, `12px` radius. `book` first and default; six and five columns on narrow screens, the dialog scrolls rather than clips. Typing pre-selects the best match and names it quietly below the field (§13.11).
 4. Hue picker: one `18px` circle per documented hue (§4.2) — four reserved first, then the five in use — in `28px` targets. Selected: `1.5px #111` outer ring, `2px` white gap. Default `45` (ochre).
-5. Target stepper: `− 3 h/day +`, `0.25` steps, `0.25–12`, tabular, disabled at bounds; default `3`.
+5. Target stepper: `− 21 h/week +`, `1` step `2–84` (or `− 3 h/day +`, `0.25` step `0.25–12` after a unit switch), tabular, disabled at bounds; default `3` hours/day, read as `21` hours/week.
 6. Footer: ghost `cancel`, primary `create`, `12px` apart. `Esc`, `cancel`, backdrop click close without creating; focus starts in the name, trapped in the panel.
-7. On create: append a skill with `goal: 10000 | 1000`, `micro` matching the mode, an empty log, and `createdAt` today (no seeded hours), switch with `viewIn`, focus its rail button, announce `<name> added.` politely. Subline `No sessions logged yet · target 3 h/day` plus `· 1,000 h` in micro mode.
+7. On create: append a skill with `goal: 10000 | 1000`, `micro` matching the mode, an empty log, and `createdAt` today (no seeded hours), switch with `viewIn`, focus its rail button, announce `<name> added.` politely. Subline `No sessions logged yet · target 21 h/week` plus `· 1,000 h` in micro mode.
 
 ### 13.9 Empty states
 
@@ -1020,7 +1022,7 @@ The console is fully operable without a pointer. Nothing added at rest: `⌘K` /
 | Empty | `No matches.` |
 | Nav | `↑`/`↓` wrap, `Home`/`End` jump, `Enter` runs, `Tab` never leaves; hover selects, click runs |
 
-Actions: `New skill…`, `New microskill…`, `Edit daily target…`, `Log today…`, `Start`/`Stop session`, `Delete <skill>…`, `Keyboard shortcuts`, and `Switch to <skill>` per skill; a `Switch to X` row hides while X already matches under **Skills**. `New microskill…` opens the create dialog in micro mode (§23.1); its search terms include `micro`, `microskill`, `1000`, `thousand`, and `shorter horizon`. Running a row closes the palette first (focus restored) so dialogs open against the right trigger. `Log today…` falls back to the most recent rendered day if today is missing from the graph, and says so.
+Actions: `New skill…`, `New microskill…`, `Edit target…`, `Log today…`, `Start`/`Stop session`, `Delete <skill>…`, `Keyboard shortcuts`, and `Switch to <skill>` per skill; a `Switch to X` row hides while X already matches under **Skills**. `New microskill…` opens the create dialog in micro mode (§23.1); its search terms include `micro`, `microskill`, `1000`, `thousand`, and `shorter horizon`. Running a row closes the palette first (focus restored) so dialogs open against the right trigger. `Log today…` falls back to the most recent rendered day if today is missing from the graph, and says so.
 
 ### 19.2 Shortcut map
 
@@ -1032,7 +1034,7 @@ Actions: `New skill…`, `New microskill…`, `Edit daily target…`, `Log today
 | `1`–`9` | jump to skill N |
 | `N` | new skill |
 | `⌘⇧N` / `Ctrl+Shift+N` | new microskill (§23.1) |
-| `T` | edit this skill's daily target |
+| `T` | edit this skill's target |
 | `L` | log today |
 | `S` | start / stop the session for today |
 | `D` | delete this skill (opens the confirm; never deletes outright) |

@@ -33,7 +33,7 @@ Because when the initial excitement is gone, the only useful question is: _am I 
 
 <br />
 
-[![Open the console](https://img.shields.io/badge/OPEN_THE_CONSOLE-101010?style=flat-square&labelColor=101010&color=101010)](https://abhinav-prabhakar.github.io/10k/)
+[![Open the console](https://img.shields.io/badge/OPEN_THE_CONSOLE-101010?style=flat-square&labelColor=101010&color=101010)](https://abhinav-prabhakar.github.io/10k/index.html?console)
 [![Hobby gallery](https://img.shields.io/badge/HOBBY_GALLERY-1f1f21?style=flat-square&labelColor=1f1f21&color=1f1f21)](https://abhinav-prabhakar.github.io/10k/gallery.html)
 [![Design system](https://img.shields.io/badge/DESIGN_SYSTEM-7c3aed?style=flat-square&labelColor=7c3aed&color=7c3aed)](design.md)
 
@@ -58,6 +58,8 @@ The milestone row is the only ornament. Eleven thresholds, struck gold when cros
 ---
 
 ## The gallery
+
+The gallery is the front door. Opening the app — the site root or the installed PWA — lands on the field of photographs; the console is one click away (`index.html?console`, or any skill tile).
 
 A visual index for the hobbies that could become practices. Twenty photographs, one draggable field. The skills you already track keep their colour and open their page. Everything else waits in greyscale, marked `soon`.
 
@@ -107,7 +109,7 @@ The page is the same instrument. The bar, ETA, completion copy, and milestone ro
 
 ## Yours, locally
 
-Your practice is a file you can read, not a metric inside someone else's product. Skills, logs, targets, the active skill, and each skill's horizon live in `localStorage` under `tenk.v1`. A corrupt payload is backed up and reseeded; storage failures never throw. The theme preference lives separately under `tenk.theme`.
+Your practice is a file you can read, not a metric inside someone else's product. Skills, logs, targets, the active skill, and each skill's horizon live in `localStorage` under `tenk.v1`. A corrupt payload is backed up and reseeded; storage failures never throw. The theme preference lives separately under `tenk.theme`, and the target's read-out unit under `tenk.unit`.
 
 There is no account, no server, and no tracking. A running stopwatch is still written only when the session is logged or discarded.
 
@@ -121,7 +123,7 @@ cd 10k
 open index.html
 ```
 
-That is the whole setup. For the localStorage contract and the Node tests:
+That opens the gallery; `open "index.html?console"` opens the console directly. That is the whole setup. For the localStorage contract and the Node tests:
 
 ```bash
 python3 -m http.server 8899
@@ -145,7 +147,7 @@ Open <http://localhost:8899>.
 | <kbd>1</kbd>–<kbd>9</kbd> | Jump to skill |
 | <kbd>N</kbd> | New skill |
 | <kbd>⌘</kbd><kbd>⇧</kbd><kbd>N</kbd> / <kbd>Ctrl</kbd><kbd>⇧</kbd><kbd>N</kbd> | New microskill |
-| <kbd>T</kbd> | Edit the daily target |
+| <kbd>T</kbd> | Edit the target (hours/week by default; hold the number to switch units) |
 | <kbd>L</kbd> | Log today |
 | <kbd>S</kbd> | Start / stop today's session |
 | <kbd>D</kbd> | Delete this skill |
