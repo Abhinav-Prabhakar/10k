@@ -109,7 +109,7 @@ The page is the same instrument. The bar, ETA, completion copy, and milestone ro
 
 ## Yours, locally
 
-Your practice is a file you can read, not a metric inside someone else's product. Skills, logs, targets, the active skill, and each skill's horizon live in `localStorage` under `tenk.v1`. A corrupt payload is backed up and reseeded; storage failures never throw. The theme preference lives separately under `tenk.theme`, and the target's read-out unit under `tenk.unit`.
+Your practice is a file you can read, not a metric inside someone else's product. Skills, logs, targets, each skill's unit, the active skill, and each skill's horizon live in `localStorage` under `tenk.v1`. A corrupt payload is backed up and reseeded; storage failures never throw. The theme preference lives separately under `tenk.theme`.
 
 There is no account, no server, and no tracking. A running stopwatch is still written only when the session is logged or discarded.
 
@@ -147,7 +147,7 @@ Open <http://localhost:8899>.
 | <kbd>1</kbd>–<kbd>9</kbd> | Jump to skill |
 | <kbd>N</kbd> | New skill |
 | <kbd>⌘</kbd><kbd>⇧</kbd><kbd>N</kbd> / <kbd>Ctrl</kbd><kbd>⇧</kbd><kbd>N</kbd> | New microskill |
-| <kbd>T</kbd> | Edit the target (hours/week by default; hold the number to switch units) |
+| <kbd>T</kbd> | Edit the target (hours/week by default; hold the number + unit to switch that skill's unit) |
 | <kbd>L</kbd> | Log today |
 | <kbd>S</kbd> | Start / stop today's session |
 | <kbd>D</kbd> | Delete this skill |

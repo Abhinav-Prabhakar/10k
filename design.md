@@ -292,7 +292,7 @@ Paths in `ICONS`; picker order = `ICON_CHOICES`, `book` first (default). Functio
 
 Subline: metadata, not a sentence — values in `<b>`, weight `300`, `#7a7a7a`, separators `·`. Target: the one editable value — borderless `<button>`, same size/weight as the meta, `1px #ececec` bottom rule, hover/focus `#111` text and rule, opens the target editor (§6.7). Legend `9px`, uppercase, `0.09em`, `#c8c8c8`; swatches `11px`, cells' radius and ramp; `less`/`more` flank them, `3px` side margins.
 
-Empty subline `No sessions logged yet · target 21 h/week`; target stays visible for calibration, never blank, header keeps its height. The unit follows the last choice in the target editor (§6.7): hours/week by default, hours/day on hold. Hold hint (§18, §20): below the legend, right-aligned, `9.5px/300`, `#767676`, removed after the first live session or first scrub.
+Empty subline `No sessions logged yet · target 21 h/week`; target stays visible for calibration, never blank, header keeps its height. The unit is the skill's own, set in the target editor (§6.7): hours/week by default, hours/day after a hold. Hold hint (§18, §20): below the legend, right-aligned, `9.5px/300`, `#767676`, removed after the first live session or first scrub.
 
 ### 6.4 Contribution graph
 
@@ -349,7 +349,7 @@ No visible box, focus ring, or label; date line and `h` supply context; keyboard
 | Position | centered below the target button, `10px` gap; flip above if it would cross the viewport; clamp axes to `10px` |
 | Enter motion | opacity `0→1`, `translateY(-4px) scale(.96)` → none, `160ms` |
 | Value | `26px/200`, tabular; unit `12px #c4c4c4`; weekly range `2–84`, step `1`; daily range `0.25–12`, step `0.25` |
-| Unit | hours per week is the default read-out; the stored value stays hours/day. Hold the number `450ms` (or focus it and press `Enter`) to flip `h/week` ↔ `h/day`; the choice persists under `tenk.unit` |
+| Unit | hours per week is the default read-out; the stored value stays hours/day. Hold the number **and its unit** `450ms` (or focus the pair and press `Enter`) to flip this skill only between `h/week` and `h/day`; each skill keeps its own unit in `tenk.v1` |
 | Slider | `2px #f1f1f1` track, `9px #111` thumb with `3px` white halo; `1px × 6px #efefef` ticks every day-equivalent hour |
 | Steppers | `26 × 26px`, radius `7px`, `#f7f7f7` → `#111`; `−`/`+` move `1h` weekly or `0.25h` daily; disabled at bounds |
 | `save` | ghost `10px #767676` → `#111`; visible because a slider has no Enter key on touch |
@@ -499,6 +499,7 @@ type Habit = {
   name: string;          // "Piano"
   hue: number;           // 268
   target: number;        // hours/day, e.g. 3
+  unit: 'day' | 'week';  // how this skill's target is read out; default 'week'
   icon: IconName;
   goal: number;          // 10000 default, 1000 for a microskill (§23)
   micro: boolean;        // true only when the goal is the 1,000-hour horizon
@@ -507,7 +508,7 @@ type Habit = {
 };
 ```
 
-`goal` is data, never inferred from `name` or `target`; `goalOf(h) = h.goal || 10000` is the single read path. A payload missing `goal` migrates to `10000`; `micro: true` without a goal migrates to `1000`.
+`goal` is data, never inferred from `name` or `target`; `goalOf(h) = h.goal || 10000` is the single read path. A payload missing `goal` migrates to `10000`; `micro: true` without a goal migrates to `1000`. A payload missing `unit` migrates to `'week'`. The unit is per skill: changing it never changes another skill's read-out.
 
 - Day keys: **local** calendar days, zero-padded `YYYY-MM-DD`; never UTC — 11pm belongs to that evening. A day is absent or `> 0`; clearing deletes the key, never stores `0`.
 - Hours at **minute precision**, rounded to `1/60`, clamped `0–24`. Manual entry offers quarter-hour steps (`+½`, `+1`, `+2`) but normalises to minutes on commit; a live session (§18) rounds elapsed to the nearest minute, minimum one.
@@ -646,7 +647,7 @@ The rail's add affordance (§6.1) is the only discovery point for a new skill; n
 2. Name field: borderless `26px/200`, `9px` uppercase label above, `1px #eee` underline → `#111` on focus; focused and selected on open; `Enter` creates. Required; errors `10.5px #c93a3a` below (`Enter a name.`, `That name is already in use.`), never a toast.
 3. Icon picker: 42 `40px` buttons (§6.2) in `repeat(auto-fill, 40px)`, `8px` gaps (`6px` at `≤520px`), `#cbcbcb` rest, `#111` selected with a `1.5px #111` ring, `12px` radius. `book` first and default; six and five columns on narrow screens, the dialog scrolls rather than clips. Typing pre-selects the best match and names it quietly below the field (§13.11).
 4. Hue picker: one `18px` circle per documented hue (§4.2) — four reserved first, then the five in use — in `28px` targets. Selected: `1.5px #111` outer ring, `2px` white gap. Default `45` (ochre).
-5. Target stepper: `− 21 h/week +`, `1` step `2–84` (or `− 3 h/day +`, `0.25` step `0.25–12` after a unit switch), tabular, disabled at bounds; default `3` hours/day, read as `21` hours/week.
+5. Target stepper: `− 21 h/week +`, `1` step `2–84` (or `− 3 h/day +`, `0.25` step `0.25–12` after a hold on the value), tabular, disabled at bounds; default `3` hours/day, read as `21` hours/week. Holding the number + unit sets the new skill's own unit; it never changes the page's skill.
 6. Footer: ghost `cancel`, primary `create`, `12px` apart. `Esc`, `cancel`, backdrop click close without creating; focus starts in the name, trapped in the panel.
 7. On create: append a skill with `goal: 10000 | 1000`, `micro` matching the mode, an empty log, and `createdAt` today (no seeded hours), switch with `viewIn`, focus its rail button, announce `<name> added.` politely. Subline `No sessions logged yet · target 21 h/week` plus `· 1,000 h` in micro mode.
 

@@ -259,14 +259,16 @@ h1,h2,h3{font-weight:200}
 .targeter.on{opacity:1;transform:none;pointer-events:auto}
 .tg-label{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#bdbdbd;font-weight:400;margin-bottom:8px}
 .tg-hold{font-size:8.5px;letter-spacing:.04em;text-transform:none;color:#d4d4d4;white-space:nowrap}
-.tg-value{display:flex;align-items:baseline;gap:5px;margin-bottom:8px}
-.tg-num{
-  font-size:26px;font-weight:200;letter-spacing:-.03em;line-height:1;color:#111;font-variant-numeric:tabular-nums;
+.tg-value{
+  position:relative;display:flex;align-items:baseline;gap:5px;margin-bottom:8px;
   cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;
-  transition:opacity .16s ease,transform .16s ease;
+  transition:opacity .16s ease;
 }
-.tg-num.is-holding{opacity:.45;transform:scale(.97)}
-.tg-num:focus-visible{outline:2px solid #111;outline-offset:2px;border-radius:4px}
+/* a generous hold surface around the number and its unit */
+.tg-value::before{content:'';position:absolute;inset:-9px -7px}
+.tg-value.is-holding{opacity:.45}
+.tg-value:focus-visible{outline:2px solid #111;outline-offset:3px;border-radius:4px}
+.tg-num{font-size:26px;font-weight:200;letter-spacing:-.03em;line-height:1;color:#111;font-variant-numeric:tabular-nums}
 .tg-unit{font-size:12px;color:#c4c4c4}
 .tg-scale{position:relative;height:22px;margin-bottom:3px}
 .tg-ticks{position:absolute;inset:0;pointer-events:none}
@@ -392,11 +394,20 @@ h1,h2,h3{font-weight:200}
 .step-btn:active{transform:scale(.94)}
 .step-btn:disabled{opacity:.3;cursor:default}
 .step-val{
-  min-width:44px;text-align:center;
+  position:relative;min-width:44px;text-align:center;
   font-size:15px;font-weight:300;letter-spacing:-.01em;
   font-variant-numeric:tabular-nums;color:#101010;
+  cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:none;
+  transition:opacity .16s ease;
 }
+/* a generous hold surface around the number and its unit */
+.step-val::before{content:'';position:absolute;inset:-10px -9px}
+.step-val.is-holding{opacity:.45}
+.step-val:focus-visible{outline:2px solid #111;outline-offset:3px;border-radius:6px}
 .step-unit{margin-left:4px;font-size:10.5px;color:#c2c2c2}
+.dlg-label-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+.dlg-label-row .dlg-label{margin-bottom:0}
+.dlg-hold{font-size:8.5px;letter-spacing:.04em;color:#d4d4d4;white-space:nowrap}
 .dlg-foot{display:flex;justify-content:flex-end;gap:12px;margin-top:28px}
 .btn-ghost{
   height:34px;padding:0 14px;border-radius:8px;
@@ -926,7 +937,7 @@ body.dialog-open{overflow:hidden}
 <!-- target, in hours per day or per week -->
 <div class="targeter" id="targeter" role="dialog" aria-label="Edit target" hidden>
   <div class="tg-label"><span id="tgLabel">Weekly target</span><span class="tg-hold" id="tgHold">hold for h/day</span></div>
-  <div class="tg-value"><span class="tg-num" id="tgNum" role="button" tabindex="0">21</span><span class="tg-unit" id="tgUnit">h/week</span></div>
+  <div class="tg-value" id="tgValue" role="button" tabindex="0"><span class="tg-num" id="tgNum">21</span><span class="tg-unit" id="tgUnit">h/week</span></div>
   <div class="tg-scale">
     <div class="tg-ticks" id="tgTicks" aria-hidden="true"></div>
     <input class="tg-range" id="tgRange" type="range" min="2" max="84" step="1" value="21" aria-label="Weekly target" aria-valuetext="21 hours per week"/>
@@ -989,10 +1000,13 @@ body.dialog-open{overflow:hidden}
     </div>
 
     <div class="dlg-row">
-      <span class="dlg-label" id="dlgTargetLabel">Target</span>
+      <div class="dlg-label-row">
+        <span class="dlg-label" id="dlgTargetLabel">Target</span>
+        <span class="dlg-hold" id="dlgHold">hold for h/day</span>
+      </div>
       <div class="stepper" role="group" aria-labelledby="dlgTargetLabel">
         <button class="step-btn" id="dlgMinus" type="button" aria-label="Decrease target">−</button>
-        <span class="step-val"><span id="dlgTarget">21</span><span class="step-unit" id="dlgUnit">h/week</span></span>
+        <span class="step-val" id="dlgValue" role="button" tabindex="0"><span id="dlgTarget">21</span><span class="step-unit" id="dlgUnit">h/week</span></span>
         <button class="step-btn" id="dlgPlus" type="button" aria-label="Increase target">+</button>
       </div>
     </div>
@@ -1173,6 +1187,32 @@ const goalOf = h => h.goal || FULL_GOAL;
 /* only the thresholds that exist inside this skill's horizon */
 const milestonesFor = h => MILESTONES.filter(m => m <= goalOf(h));
 
+/* ============================================================
+   TARGET UNIT — stored hours/day, read per skill in week or day
+   ============================================================ */
+const DEFAULT_UNIT = 'week';
+const UNITS = {
+  day:  {per:1, suffix:'h/day',  long:'hours per day',  label:'Daily target',
+         min:0.25, max:12, step:0.25, stepWord:'15 minutes'},
+  week: {per:7, suffix:'h/week', long:'hours per week', label:'Weekly target',
+         min:2, max:84, step:1, stepWord:'1 hour'},
+};
+const isUnitKey = u => u === 'day' || u === 'week';
+const unitKey = h => isUnitKey(h && h.unit) ? h.unit : DEFAULT_UNIT;
+const unitOf = h => UNITS[unitKey(h)];
+const otherOf = key => key === 'week' ? 'day' : 'week';
+
+const inUnit = (day, h) => day * unitOf(h).per;
+const fromUnit = (v, h) => v / unitOf(h).per;
+
+/* whole hours per week, quarter hours per day — never "3.142857" */
+function fmtInUnit(day, h){
+  const v = inUnit(day, h);
+  return String(unitKey(h) === 'week' ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100);
+}
+const targetText = (day, h) => `${fmtInUnit(day, h)} ${unitOf(h).suffix}`;
+const targetVerb = (day, h) => `${fmtInUnit(day, h)} ${unitOf(h).long}`;
+
 const SEED_HABITS = [
   {name:'Piano',       hue:268, target:3,   icon:'piano'},
   {name:'Drawing',     hue:205, target:2,   icon:'drawing'},
@@ -1184,18 +1224,19 @@ const SEED_HABITS = [
 function seedHabits(){
   return SEED_HABITS.map(h=>({
     name:h.name, hue:h.hue, target:h.target, icon:h.icon,
-    goal:FULL_GOAL, micro:false,
+    goal:FULL_GOAL, micro:false, unit:DEFAULT_UNIT,
     createdAt:keyOf(today),
     log:{},
   }));
 }
 
-/* a habit restored from storage may predate goal/micro; fill only what is missing */
+/* a habit restored from storage may predate goal/micro/unit; fill only what is missing */
 function normalizeHabit(h){
   const micro = h.micro === true;
   return Object.assign({}, h, {
     goal: h.goal || (micro ? MICRO_GOAL : FULL_GOAL),
     micro,
+    unit: isUnitKey(h.unit) ? h.unit : DEFAULT_UNIT,
     createdAt: h.createdAt || keyOf(today),
     log: h.log || {},
   });
@@ -1388,7 +1429,7 @@ function metricsHTML1(h, s){
     <div class="tile">
       <div class="t-top">
         <span class="t-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">${ICONS.pulse}</svg>Pace</span>
-        <span class="t-hint">${s.ratio.toFixed(2)}× target · ${targetText(h.target)}</span>
+        <span class="t-hint">${s.ratio.toFixed(2)}× target · ${targetText(h.target, h)}</span>
       </div>
       <div class="t-value"><span class="num" data-num="pace" data-to="${s.pace}" data-dec="1">0</span><span class="t-unit">h/day</span></div>
       ${sparkHTML(h, s)}
@@ -1547,7 +1588,7 @@ function view1(h){
       <header class="head">
         <div>
           <h1>${h.name}</h1>
-          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit target, ${targetVerb(h.target)}">${targetText(h.target)}</button></p>
+          <p class="hsub">${s.first ? `Tracking since <b>${fmtMonYr(s.first)}</b> · ` : 'No sessions logged yet · '}target <button type="button" class="hsub-target" id="targetBtn" aria-label="Edit target, ${targetVerb(h.target, h)}">${targetText(h.target, h)}</button></p>
         </div>
         <div class="head-right">
           <div class="head-tools">
@@ -1788,35 +1829,14 @@ logger.addEventListener('click', e=>{
    ============================================================ */
 const TARGET_MIN = 0.25, TARGET_MAX = 12;
 
-/* The target is stored as hours per day, but it is read back in hours per
-   week by default. Holding the number in the editor flips the unit. */
-const UNIT_KEY = 'tenk.unit';
-const UNITS = {
-  day:  {per:1, suffix:'h/day',  long:'hours per day',  label:'Daily target',
-         min:0.25, max:12, step:0.25, stepWord:'15 minutes'},
-  week: {per:7, suffix:'h/week', long:'hours per week', label:'Weekly target',
-         min:2, max:84, step:1, stepWord:'1 hour'},
-};
-let targetUnit = (()=>{
-  try{ return localStorage.getItem(UNIT_KEY) === 'day' ? 'day' : 'week'; }
-  catch(_){ return 'week'; }
-})();
-const unitOf = () => UNITS[targetUnit];
-const otherUnit = () => targetUnit === 'week' ? 'day' : 'week';
-const inUnit = day => day * unitOf().per;
-const fromUnit = v => v / unitOf().per;
-
-/* whole hours per week, quarter hours per day — never "3.142857" */
-function fmtInUnit(day){
-  const v = inUnit(day);
-  return String(targetUnit === 'week' ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100);
-}
-const targetText = day => `${fmtInUnit(day)} ${unitOf().suffix}`;
-const targetVerb = day => `${fmtInUnit(day)} ${unitOf().long}`;
+/* The target is stored as hours per day; this skill's unit decides how it is
+   read back. Holding the number and its unit in either surface flips that
+   skill alone. */
 
 const targeter = document.getElementById('targeter');
 const tgLabel = document.getElementById('tgLabel');
 const tgHold = document.getElementById('tgHold');
+const tgValue = document.getElementById('tgValue');
 const tgNum = document.getElementById('tgNum');
 const tgUnit = document.getElementById('tgUnit');
 const tgRange = document.getElementById('tgRange');
@@ -1826,8 +1846,8 @@ const tgPlus = document.getElementById('tgPlus');
 const tgSave = document.getElementById('tgSave');
 let targetEdit = null, targetTimer = null;
 
-function paintTicks(){
-  const u = unitOf();
+function paintTicks(h){
+  const u = unitOf(h);
   const out = [];
   for(let i=1;i<=11;i++){
     const v = i * u.per;
@@ -1846,35 +1866,38 @@ function paintTarget(habit, v){
   });
   const btn = document.getElementById('targetBtn');
   if(btn){
-    btn.textContent = targetText(v);
-    btn.setAttribute('aria-label', `Edit target, ${targetVerb(v)}`);
+    btn.textContent = targetText(v, habit);
+    btn.setAttribute('aria-label', `Edit target, ${targetVerb(v, habit)}`);
   }
 }
 
 function syncTargetSteps(v){
-  const u = unitOf();
+  const u = unitOf(targetEdit.habit);
   tgMinus.disabled = v <= u.min + 1e-9;
   tgPlus.disabled = v >= u.max - 1e-9;
 }
 
 function previewTarget(v){
   if(!targetEdit) return;
-  const u = unitOf();
+  const h = targetEdit.habit;
+  const u = unitOf(h);
   v = Math.min(u.max, Math.max(u.min, Math.round(v * 100) / 100));
-  const day = fromUnit(v);
-  tgNum.textContent = fmtInUnit(day);
+  const day = fromUnit(v, h);
+  tgNum.textContent = fmtInUnit(day, h);
   tgRange.value = String(v);
-  tgRange.setAttribute('aria-valuetext', targetVerb(day));
+  tgRange.setAttribute('aria-valuetext', targetVerb(day, h));
   syncTargetSteps(v);
-  paintTarget(targetEdit.habit, day);
+  paintTarget(h, day);
 }
 
-/* the editor's chrome follows the unit, without touching the value */
+/* the editor's chrome follows this skill's unit, without touching the value */
 function syncTargetChrome(day){
-  const u = unitOf();
+  const h = targetEdit.habit;
+  const u = unitOf(h);
+  const other = otherOf(unitKey(h));
   tgLabel.textContent = u.label;
   tgUnit.textContent = u.suffix;
-  tgHold.textContent = `hold for ${UNITS[otherUnit()].suffix}`;
+  tgHold.textContent = `hold for ${UNITS[other].suffix}`;
   targeter.setAttribute('aria-label', `Edit ${u.label.toLowerCase()}`);
   tgRange.min = String(u.min);
   tgRange.max = String(u.max);
@@ -1882,62 +1905,69 @@ function syncTargetChrome(day){
   tgRange.setAttribute('aria-label', u.label);
   tgMinus.setAttribute('aria-label', `Decrease ${u.label.toLowerCase()} by ${u.stepWord}`);
   tgPlus.setAttribute('aria-label', `Increase ${u.label.toLowerCase()} by ${u.stepWord}`);
-  tgNum.setAttribute('aria-label', `${targetVerb(day)}. Hold, or press Enter, to switch to ${UNITS[otherUnit()].long}.`);
-  paintTicks();
+  tgValue.setAttribute('aria-label', `${targetVerb(day, h)}. Hold, or press Enter, to switch this skill to ${UNITS[other].long}.`);
+  paintTicks(h);
 }
 
 function applyUnitToEditor(day){
+  const h = targetEdit.habit;
   syncTargetChrome(day);
-  const v = inUnit(day);
+  const v = inUnit(day, h);
   tgRange.value = String(v);
-  tgNum.textContent = fmtInUnit(day);
-  tgRange.setAttribute('aria-valuetext', targetVerb(day));
+  tgNum.textContent = fmtInUnit(day, h);
+  tgRange.setAttribute('aria-valuetext', targetVerb(day, h));
   syncTargetSteps(v);
 }
 
+/* flips the edited skill's unit only — every other skill keeps its own */
 function switchTargetUnit(){
-  targetUnit = otherUnit();
-  try{ localStorage.setItem(UNIT_KEY, targetUnit); }catch(_){}
-  const hop = targetEdit ? targetEdit.habit : state.habit;
-  if(targetEdit) applyUnitToEditor(hop.target);
-  paintTarget(hop, hop.target);
+  if(!targetEdit) return;
+  const h = targetEdit.habit;
+  h.unit = otherOf(unitKey(h));
+  applyUnitToEditor(h.target);
+  paintTarget(h, h.target);
   refreshMetrics();
-  if(targetEdit && state.session && state.session.hi === state.hi) tickSession();
-  announce(`Target shown in ${unitOf().long}.`);
+  saveState();
+  if(state.session && state.session.hi === state.hi) tickSession();
+  announce(`This skill's target now reads in ${unitOf(h).long}.`);
 }
 
-/* long press the number — 450ms, cancelled by travel or release */
-const NUM_HOLD_MS = 450;
-let numHold = null;
-function cancelNumHold(){
-  if(numHold){
-    clearTimeout(numHold.timer);
-    numHold = null;
-  }
-  tgNum.classList.remove('is-holding');
+/* long press a value + unit — 450ms, cancelled by travel or release */
+const UNIT_HOLD_MS = 450;
+function attachUnitHold(el, onHold){
+  let hold = null;
+  const cancel = ()=>{
+    if(hold){
+      clearTimeout(hold.timer);
+      hold = null;
+    }
+    el.classList.remove('is-holding');
+  };
+  el.addEventListener('pointerdown', e=>{
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    cancel();
+    try{ el.setPointerCapture(e.pointerId); }catch(_){}
+    el.classList.add('is-holding');
+    hold = {x:e.clientX, y:e.clientY, timer:setTimeout(()=>{
+      hold = null;
+      el.classList.remove('is-holding');
+      onHold();
+    }, UNIT_HOLD_MS)};
+  });
+  el.addEventListener('pointermove', e=>{
+    if(!hold) return;
+    if(Math.abs(e.clientX - hold.x) > 8 || Math.abs(e.clientY - hold.y) > 8) cancel();
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t, cancel));
+  el.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); onHold(); }
+  });
 }
-tgNum.addEventListener('pointerdown', e=>{
-  if(e.pointerType === 'mouse' && e.button !== 0) return;
-  cancelNumHold();
-  try{ tgNum.setPointerCapture(e.pointerId); }catch(_){}
-  tgNum.classList.add('is-holding');
-  numHold = {x:e.clientX, y:e.clientY, timer:setTimeout(()=>{
-    numHold = null;
-    tgNum.classList.remove('is-holding');
-    switchTargetUnit();
-  }, NUM_HOLD_MS)};
-});
-tgNum.addEventListener('pointermove', e=>{
-  if(!numHold) return;
-  if(Math.abs(e.clientX - numHold.x) > 8 || Math.abs(e.clientY - numHold.y) > 8) cancelNumHold();
-});
-['pointerup','pointercancel','pointerleave'].forEach(t=>tgNum.addEventListener(t, cancelNumHold));
-tgNum.addEventListener('keydown', e=>{
-  if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); switchTargetUnit(); }
-});
 
-/* the hidden editor starts in the reader's unit, so the first open is instant */
-syncTargetChrome(state.habit.target);
+attachUnitHold(tgValue, switchTargetUnit);
+
+/* paint the resting ticks for this skill; open() sets the rest */
+paintTicks(state.habit);
 
 function positionTargeter(btn){
   const r = btn.getBoundingClientRect();
@@ -1986,7 +2016,7 @@ function closeTargetEditor(opts){
 function commitTarget(){
   if(!targetEdit) return;
   const t = targetEdit;
-  const v = fromUnit(parseFloat(tgRange.value));
+  const v = fromUnit(parseFloat(tgRange.value), t.habit);
   paintTarget(t.habit, v);
   closeTargetEditor({keep:true});
   if(state.habit === t.habit){
@@ -1994,12 +2024,16 @@ function commitTarget(){
     if(state.session && state.session.hi === state.hi) tickSession();
   }
   saveState();
-  announce(`Target set to ${targetVerb(v)}.`);
+  announce(`Target set to ${targetVerb(v, t.habit)}.`);
 }
 
 tgRange.addEventListener('input', ()=>previewTarget(parseFloat(tgRange.value)));
-tgMinus.addEventListener('click', ()=>previewTarget(parseFloat(tgRange.value) - unitOf().step));
-tgPlus.addEventListener('click', ()=>previewTarget(parseFloat(tgRange.value) + unitOf().step));
+tgMinus.addEventListener('click', ()=>{
+  if(targetEdit) previewTarget(parseFloat(tgRange.value) - unitOf(targetEdit.habit).step);
+});
+tgPlus.addEventListener('click', ()=>{
+  if(targetEdit) previewTarget(parseFloat(tgRange.value) + unitOf(targetEdit.habit).step);
+});
 tgSave.addEventListener('click', commitTarget);
 
 targeter.addEventListener('keydown', e=>{
@@ -2022,6 +2056,8 @@ const dlgIcons = document.getElementById('dlgIcons');
 const dlgHues = document.getElementById('dlgHues');
 const dlgTarget = document.getElementById('dlgTarget');
 const dlgUnit = document.getElementById('dlgUnit');
+const dlgValue = document.getElementById('dlgValue');
+const dlgHold = document.getElementById('dlgHold');
 const dlgMinus = document.getElementById('dlgMinus');
 const dlgPlus = document.getElementById('dlgPlus');
 const dlgCreate = document.getElementById('dlgCreate');
@@ -2084,7 +2120,7 @@ const HUE_CHOICES = [
   {h:338, name:'Rose'},
 ];
 
-const dlgState = {icon:'book', hue:45, target:3, micro:false};
+const dlgState = {icon:'book', hue:45, target:3, unit:DEFAULT_UNIT, micro:false};
 let dlgTimer = null, dlgTrigger = null;
 
 /* ------------------------------------------------------------
@@ -2277,9 +2313,12 @@ function syncPickers(){
 }
 
 function syncTarget(){
-  const u = unitOf();
-  dlgTarget.textContent = fmtInUnit(dlgState.target);
+  const u = unitOf(dlgState);
+  const other = otherOf(unitKey(dlgState));
+  dlgTarget.textContent = fmtInUnit(dlgState.target, dlgState);
   dlgUnit.textContent = u.suffix;
+  dlgHold.textContent = `hold for ${UNITS[other].suffix}`;
+  dlgValue.setAttribute('aria-label', `${targetVerb(dlgState.target, dlgState)}. Hold, or press Enter, to create this skill in ${UNITS[other].long}.`);
   dlgMinus.disabled = dlgState.target <= TARGET_MIN + 1e-9;
   dlgPlus.disabled = dlgState.target >= TARGET_MAX - 1e-9;
   dlgMinus.setAttribute('aria-label', `Decrease target by ${u.stepWord}`);
@@ -2287,11 +2326,19 @@ function syncTarget(){
 }
 
 function bumpTarget(dir){
-  const u = unitOf();
-  const shown = Math.min(u.max, Math.max(u.min, inUnit(dlgState.target) + dir * u.step));
-  dlgState.target = Math.min(TARGET_MAX, Math.max(TARGET_MIN, fromUnit(shown)));
+  const u = unitOf(dlgState);
+  const shown = Math.min(u.max, Math.max(u.min, inUnit(dlgState.target, dlgState) + dir * u.step));
+  dlgState.target = Math.min(TARGET_MAX, Math.max(TARGET_MIN, fromUnit(shown, dlgState)));
   syncTarget();
 }
+
+/* this skill only: the new skill's unit, not the page's */
+function switchDialogUnit(){
+  dlgState.unit = otherOf(unitKey(dlgState));
+  syncTarget();
+}
+
+attachUnitHold(dlgValue, switchDialogUnit);
 
 dlgIcons.innerHTML = ICON_CHOICES.map(o=>`
   <button class="icon-opt" type="button" data-icon="${o.id}" title="${o.name}" aria-label="${o.name}" aria-pressed="false">
@@ -2313,6 +2360,7 @@ function openDialog(opts){
   dlgState.icon = 'book';
   dlgState.hue = 45;
   dlgState.target = 3;
+  dlgState.unit = DEFAULT_UNIT;
   dlgState.micro = micro;
   dlgName.value = '';
   dlgName.removeAttribute('aria-invalid');
@@ -2370,6 +2418,7 @@ function createSkill(){
     name,
     hue: dlgState.hue,
     target: dlgState.target,
+    unit: dlgState.unit,
     icon: dlgState.icon,
     goal: dlgState.micro ? MICRO_GOAL : FULL_GOAL,
     micro: dlgState.micro,
@@ -2426,7 +2475,7 @@ dlgBack.addEventListener('click', e=>{
 dlgBack.addEventListener('keydown', e=>{
   if(e.key === 'Escape'){ e.preventDefault(); closeDialog(); return; }
   if(e.key !== 'Tab') return;
-  const f = [...dlg.querySelectorAll('button:not(:disabled), input:not(:disabled)')]
+  const f = [...dlg.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]')]
     .filter(el=>el.offsetParent !== null);
   if(!f.length) return;
   const first = f[0], last = f[f.length - 1];

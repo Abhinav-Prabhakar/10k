@@ -14,15 +14,17 @@ const base = (over) => Object.assign({
   log: {'2026-01-03': 1.5, '2026-01-04': 0},
 }, over || {});
 
-/* 1. exact round trip: goal and micro survive */
+/* 1. exact round trip: goal, micro and unit survive */
 {
-  const habits = [base(), base({name: 'Spanish', goal: 1000, micro: true})];
+  const habits = [base(), base({name: 'Spanish', goal: 1000, micro: true, unit: 'day'})];
   const json = JSON.stringify(Store.serialize(habits, 1));
   const parsed = Store.parse(json);
   assert.equal(parsed.ok, true);
   assert.equal(parsed.data.hi, 1);
   assert.equal(parsed.data.habits[1].goal, 1000);
   assert.equal(parsed.data.habits[1].micro, true);
+  assert.equal(parsed.data.habits[1].unit, 'day');
+  assert.equal(parsed.data.habits[0].unit, 'week');
   assert.equal(parsed.data.habits[0].goal, 10000);
   assert.equal(parsed.data.habits[0].micro, false);
 }

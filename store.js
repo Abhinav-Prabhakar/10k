@@ -72,11 +72,12 @@
       ? Math.min(MAX_TARGET, Math.max(MIN_TARGET, Number(h.target)))
       : 3;
     const icon = typeof h.icon === 'string' && h.icon ? h.icon : 'book';
+    const unit = h.unit === 'day' ? 'day' : 'week';
     const createdAt = typeof h.createdAt === 'string' && DAY_RE.test(h.createdAt)
       ? h.createdAt
       : todayKey();
 
-    return {name, hue, target, icon, goal, micro, createdAt, log: cleanLog(h.log)};
+    return {name, hue, target, unit, icon, goal, micro, createdAt, log: cleanLog(h.log)};
   }
 
   function serialize(habits, hi){
